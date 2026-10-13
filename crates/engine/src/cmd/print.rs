@@ -62,6 +62,152 @@ fn intent_param(p: &Value) -> Result<darkroom_print::Intent> {
     }
 }
 
+
+/// `print.sheet`: one catalog photo on a page (the signature sheet by default), rendered at the
+/// print's density through LightCraft's own pipeline, composed, converted into the paper's
+/// profile, and either saved as a 16-bit TIFF or sent to the P900.
+fn sheet(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "print.sheet";
+    use darkroom_print::sheet::Layout;
+    // the photo
+    let id = p.get("id").and_then(Value::as_u64).map(lightcraft_catalog::PhotoId).or_else(|| s.targets(p).first().copied()).ok_or_else(|| bad(C, "id required (or a selection)"))?;
+    let photo = s.catalog.photo(id).cloned().ok_or_else(|| bad(C, "no such photo"))?;
+    // the paper and mode
+    let paper_id = str_param(p, "paper").filter(|x| !x.is_empty()).ok_or_else(|| bad(C, "paper required (see print.papers)"))?;
+    let paper = darkroom_print::p900::paper(paper_id).ok_or_else(|| bad(C, format!("unknown paper `{paper_id}` (see print.papers)")))?;
+    let abw: Option<darkroom_print::p900::Abw> = match p.get("abw") {
+        None | Some(Value::Null) => None,
+        Some(v) => Some(serde_json::from_value(v.clone()).map_err(|e| bad(C, format!("abw: {e}")))?),
+    };
+    let quality = match str_param(p, "quality").unwrap_or("max") {
+        "draft" => darkroom_print::p900::Quality::Draft,
+        "high" => darkroom_print::p900::Quality::High,
+        "max" => darkroom_print::p900::Quality::Max,
+        other => return Err(bad(C, format!("unknown quality `{other}` (draft|high|max)"))),
+    };
+    // the layout: signature by default, every number overridable
+    let mut layout = match str_param(p, "layout").unwrap_or("signature") {
+        "signature" => Layout::signature(),
+        "plain" => Layout::plain(13.0, 19.0, 0.25, 300),
+        other => return Err(bad(C, format!("unknown layout `{other}` (signature|plain)"))),
+    };
+    if let Some(sz) = str_param(p, "size").filter(|x| !x.is_empty()) {
+        let size = darkroom_print::p900::Size::parse(sz).ok_or_else(|| bad(C, format!("bad size `{sz}`")))?;
+        let (w, h) = size.inches();
+        layout.width_in = w;
+        layout.height_in = h;
+    }
+    if let Some(m) = p.get("margin").and_then(Value::as_f64) { layout.margin_in = m as f32; }
+    if let Some(st) = p.get("strip").and_then(Value::as_f64) { layout.strip_in = st as f32; }
+    if let Some(c) = str_param(p, "caption") { layout.caption = c.to_string(); }
+    if let Some(pt) = p.get("captionPt").and_then(Value::as_f64) { layout.caption_pt = pt as f32; }
+    if let Some(a) = str_param(p, "captionAlign") { layout.caption_align = a.to_string(); }
+    if let Some(ppi) = p.get("ppi").and_then(Value::as_u64) { layout.ppi = ppi.clamp(72, 1440) as u32; }
+    if let Some(r) = p.get("autoRotate").and_then(Value::as_bool) { layout.auto_rotate = r; }
+    let font: Option<Vec<u8>> = match str_param(p, "font").filter(|f| !f.is_empty()) {
+        Some(f) => Some(std::fs::read(f).map_err(|e| bad(C, format!("font {f}: {e}")))?),
+        None => None,
+    };
+    // where the photo lands, so it is rendered at exactly that size
+    let (pw, ph) = crate::export::output_size(&photo, &crate::export::ExportOptions::default());
+    let place = layout.place(pw as u32, ph as u32);
+    let working = if abw.is_some() { lightcraft_pipeline::OutputSpace::Srgb } else { lightcraft_pipeline::OutputSpace::AdobeRgb };
+    let opts = crate::export::ExportOptions {
+        format: crate::export::ExportFormat::Tiff,
+        bit_depth: Some(16),
+        color_space: working,
+        resize: Some(crate::export::Resize { mode: crate::export::ResizeMode::LongEdge, value: place.w.max(place.h) as f32, height: place.h, dont_enlarge: false }),
+        ppi: layout.ppi.min(u16::MAX as u32) as u16,
+        sharpen: if paper.matte { crate::export::SharpenFor::Matte } else { crate::export::SharpenFor::Glossy },
+        sharpen_amount: match str_param(p, "sharpen").unwrap_or("standard") {
+            "low" => crate::export::SharpenAmount::Low,
+            "high" => crate::export::SharpenAmount::High,
+            _ => crate::export::SharpenAmount::Standard,
+        },
+        metadata: crate::export::MetadataPolicy::All,
+        tiff_compression: crate::export::TiffCompression::None,
+        ..Default::default()
+    };
+    let exported = crate::export::export_photo(s, id, &opts, 1).map_err(|e| bad(C, format!("render: {e}")))?;
+    // back to 16-bit samples in the working space
+    let decoded = lightcraft_codecs::decode(&exported.bytes, lightcraft_codecs::DecodeOptions::default()).map_err(|e| bad(C, format!("decode: {e}")))?;
+    let trc = working.trc();
+    let img = decoded.image;
+    let mut rgb = Vec::with_capacity(img.width * img.height * 3);
+    for px in &img.data {
+        for k in 0..3 {
+            rgb.push((trc.encode(px[k]) * 65535.0).round() as u16);
+        }
+    }
+    let photo16 = darkroom_print::Image16 { width: img.width as u32, height: img.height as u32, rgb };
+    let page = darkroom_print::sheet::compose(&layout, &photo16, font.as_deref());
+    // into the paper's profile (color), or left as sRGB for Advanced B&W
+    let (page, icc, pname) = if abw.is_some() {
+        let srgb = lightcraft_codecs::icc::write_named(lightcraft_codecs::space::NamedSpace::Srgb);
+        (page, srgb, None)
+    } else {
+        let profile = match str_param(p, "profile").filter(|x| !x.is_empty()) {
+            Some(x) => std::path::PathBuf::from(x),
+            None => darkroom_print::p900::find_profile(paper, &darkroom_print::installed_profiles())
+                .ok_or_else(|| bad(C, format!("no P900 profile for {} is installed; pass profile=", paper.name)))?,
+        };
+        let bytes = std::fs::read(&profile).map_err(|e| bad(C, format!("{}: {e}", profile.display())))?;
+        let src = lightcraft_codecs::icc::write_named(lightcraft_codecs::space::NamedSpace::AdobeRgb);
+        let converted = darkroom_print::to_profile_from(&page, &src, &bytes, intent_param(p)?).map_err(|e| bad(C, e.to_string()))?;
+        let name = darkroom_print::profile_name(&bytes);
+        (converted, bytes, name)
+    };
+    let tiff = darkroom_print::tiff(&page, Some(&icc), layout.ppi).map_err(|e| bad(C, e.to_string()))?;
+    // write
+    let title = if photo.meta.title.trim().is_empty() { photo.file_name.clone() } else { photo.meta.title.clone() };
+    let safe: String = title.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' || c == ' ' { c } else { '_' }).collect();
+    let out = match str_param(p, "out").filter(|x| !x.is_empty()) {
+        Some(o) => std::path::PathBuf::from(o),
+        None => {
+            let dir = print_dir();
+            std::fs::create_dir_all(&dir).map_err(|e| bad(C, format!("{}: {e}", dir.display())))?;
+            dir.join(format!("{} {} {}.tif", safe.trim(), paper.id, if abw.is_some() { "abw" } else { "color" }))
+        }
+    };
+    if let Some(parent) = out.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| bad(C, format!("{}: {e}", parent.display())))?;
+    }
+    std::fs::write(&out, &tiff).map_err(|e| bad(C, format!("{}: {e}", out.display())))?;
+    let mut result = json!({
+        "file": out.to_string_lossy(),
+        "page": {"width": page.width, "height": page.height, "widthIn": page.width as f32 / layout.ppi as f32, "heightIn": page.height as f32 / layout.ppi as f32},
+        "image": {"x": place.x, "y": place.y, "width": photo16.width, "height": photo16.height, "ppi": layout.ppi},
+        "profile": pname,
+        "paper": paper.id,
+    });
+    // print
+    let do_print = p.get("print").and_then(Value::as_bool).unwrap_or(str_param(p, "out").is_none());
+    if do_print {
+        let h = helper(s, C)?;
+        let queue = str_param(p, "queue").filter(|q| !q.is_empty()).unwrap_or(darkroom_print::p900::QUEUE);
+        let (w_in, h_in) = (page.width as f32 / layout.ppi as f32, page.height as f32 / layout.ppi as f32);
+        // the driver wants the page as the printer sees it: width across the feed
+        let (sw, sh) = if w_in > h_in { (h_in, w_in) } else { (w_in, h_in) };
+        let size = darkroom_print::p900::Size::parse(&format!("{sw}x{sh}")).unwrap_or(darkroom_print::p900::Size::Custom { width_in: sw, height_in: sh });
+        let roll = p.get("rollWidth").and_then(Value::as_u64).map(|w| w as u32);
+        let job = darkroom_print::p900::Job { paper: paper.id.to_string(), size, quality, abw: abw.clone(), borderless: false, roll_width_in: roll, banner: false };
+        let mut options = darkroom_print::p900::options(&job).map_err(|e| bad(C, e))?;
+        if let Some(extra) = p.get("options").and_then(Value::as_object) {
+            for (k, v) in extra {
+                options.insert(k.clone(), match v { Value::String(s) => s.clone(), other => other.to_string() });
+            }
+        }
+        let opts_json = serde_json::to_value(&options).unwrap_or_default();
+        let copies = p.get("copies").and_then(Value::as_u64).unwrap_or(1).clamp(1, 99) as u32;
+        let job_title = format!("Darkroom: {title} on {}", paper.name);
+        let r = h.print_submit(queue, &out, &job_title, copies, &opts_json).map_err(|e| bad(C, e.to_string()))?;
+        result["jobId"] = r["jobId"].clone();
+        result["request"] = r["request"].clone();
+        result["options"] = opts_json;
+    }
+    Ok(result)
+}
+
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(query "print.queues", "Print Queues", [], None,
@@ -166,6 +312,9 @@ pub fn specs() -> Vec<CommandSpec> {
                 r["options"] = opts_json;
                 Ok(r)
             }),
+        cmd!(query "print.sheet", "Print Signature Sheet", ["File"], None,
+            "{id?: photo (default: the selection), paper: id from print.papers, layout?: signature|plain, size?: 13x19 (default) | 17x22 | letter | WxH, margin?: 0.25, strip?: 0.4 (0 = none), caption?, captionPt?: 7, captionAlign?: left|center|right, ppi?: 300, autoRotate?: true, font?: path to a .ttf/.otf (default Inter), quality?: draft|high|max, sharpen?: low|standard|high, abw?: {…} (Advanced B&W), profile?: ICC override, intent?, out?: path (write the TIFF only), print?: bool (default: print unless out is given), copies?, rollWidth?: inches, options?: driver overrides} → {file, page, image, profile, jobId?, request?, options?} — renders the photo at print density, lays it on the page with the signature strip, converts into the paper profile and prints through the native driver (or saves the 16-bit TIFF)",
+            always, sheet),
         cmd!(query "print.jobs", "Print Jobs", [], None, "{queue?} → {items: [lines from lpstat -o]}", print_enabled, |s, p| {
             let h = helper(s, "print.jobs")?;
             h.print_jobs(str_param(p, "queue").filter(|q| !q.is_empty())).map_err(|e| bad("print.jobs", e.to_string()))

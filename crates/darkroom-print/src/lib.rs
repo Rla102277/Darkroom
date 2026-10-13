@@ -12,6 +12,7 @@
 //! again in Advanced B&W mode, the two sheets settle milestone 2.
 
 pub mod p900;
+pub mod sheet;
 
 use lightcraft_codecs::encode::{EncodeImage, EncodeMeta, Samples, TiffCompression, encode_tiff};
 use moxcms::{ColorProfile, DataColorSpace, Layout, RenderingIntent, TransformOptions};
@@ -187,11 +188,17 @@ pub fn target(sheet: Sheet, ppi: u32, margin_in: f32) -> Image16 {
 /// Converts sRGB 16-bit into the output profile's device RGB. Gray and CMYK profiles are
 /// refused (the Epson RGB driver path wants RGB).
 pub fn to_profile(img: &Image16, profile: &[u8], intent: Intent) -> Result<Image16> {
+    let srgb = lightcraft_codecs::icc::write_named(lightcraft_codecs::space::NamedSpace::Srgb);
+    to_profile_from(img, &srgb, profile, intent)
+}
+
+/// Converts 16-bit RGB encoded in `source` (an RGB working-space profile) into `profile`.
+pub fn to_profile_from(img: &Image16, source: &[u8], profile: &[u8], intent: Intent) -> Result<Image16> {
     let dev = ColorProfile::new_from_slice(profile).map_err(|e| Error::Profile(format!("not a valid ICC profile: {e:?}")))?;
     if dev.color_space != DataColorSpace::Rgb {
         return Err(Error::Profile("the paper profile must be an RGB printer profile".into()));
     }
-    let src = ColorProfile::new_srgb();
+    let src = ColorProfile::new_from_slice(source).map_err(|e| Error::Profile(format!("source profile: {e:?}")))?;
     let opts = TransformOptions {
         rendering_intent: match intent {
             Intent::Perceptual => RenderingIntent::Perceptual,

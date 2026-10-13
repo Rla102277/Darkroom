@@ -1208,6 +1208,7 @@ dependencies = [
 name = "darkroom-print"
 version = "0.7.1"
 dependencies = [
+ "ab_glyph",
  "lightcraft-codecs",
  "log",
  "moxcms 0.9.1",
