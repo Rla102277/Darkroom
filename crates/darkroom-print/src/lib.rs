@@ -11,6 +11,8 @@
 //! line bars for resolution and sharpening. Printed through the native driver with color off and
 //! again in Advanced B&W mode, the two sheets settle milestone 2.
 
+pub mod p900;
+
 use lightcraft_codecs::encode::{EncodeImage, EncodeMeta, Samples, TiffCompression, encode_tiff};
 use moxcms::{ColorProfile, DataColorSpace, Layout, RenderingIntent, TransformOptions};
 use serde::{Deserialize, Serialize};

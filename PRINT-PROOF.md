@@ -30,10 +30,9 @@ from epson.com if it is not offered), not AirPrint.
 dr print.options queue=P900 > ~/Desktop/p900-options.json
 ```
 
-This is the list I need: send me `p900-options.json`. It names the keys for media type, print
-quality, color mode (the "Off (No Color Management)" choice), Advanced B&W and its tone
-controls, High Speed, Finest Detail, Black Enhance Overcoat, paper source and size. The names
-vary by driver version, which is why Darkroom reads them instead of guessing.
+Done on Oct 13: the dump is what `crates/darkroom-print/src/p900.rs` is built from (media types
+including the Red River 19xx entries, `EPIJ_CMat=3` for color off, `EPIJ_Ink_=3` + `ColorModel=ABWP`
+for Advanced B&W, the quality, feed, roll and size keys). Re-run it after a driver update.
 
 ## 3. Paper profiles on this Mac
 
@@ -46,27 +45,31 @@ Luster, Big Bend Baryta 310 and Polar Gloss Metallic 255 should be here once ins
 
 ## 4. The color sheet
 
-Letter size, the paper's profile, the driver's color management off, media type and quality set.
-The option keys and values come from step 2; these are placeholders until I see the list:
+The driver's option names are known now (the `print.options` dump of Oct 13), so a paper id is
+all it takes. Letter size on UltraPro Luster, the paper's Red River P900 profile found
+automatically, driver color off, Max Quality, Black Enhance Overcoat on:
 
 ```sh
-dr print.proof queue=P900 sheet=letter \
-  profile="/Library/ColorSync/Profiles/<Red River P900 UltraPro Luster>.icc" \
-  '{"options": {"<MediaTypeKey>": "<LusterValue>", "<QualityKey>": "<MaxQuality>", "<ColorModeKey>": "<Off>"}}'
+dr print.papers                                   # the paper ids and which profiles are installed
+dr print.proof paper=ultrapro-luster size=letter
 ```
 
 What to look for: the 21-step wedge separates at both ends, the smooth ramp has no bands, the
 mid-gray field has no cast, skin and sky patches look like skin and sky, the finest bars are
-distinct.
+distinct. If the sheet comes out plainly wrong (strong cast, very dark), the driver's color was
+not off: send me the `options` block the command printed.
 
 ## 5. The Advanced B&W sheet
 
-Same target, no profile (the printer maps the tones), driver put into Advanced B&W Photo:
+Same target, no profile (the printer maps the tones), Advanced B&W Photo, neutral, tone Dark:
 
 ```sh
-dr print.proof queue=P900 sheet=letter \
-  '{"options": {"<MediaTypeKey>": "<LusterValue>", "<QualityKey>": "<MaxQuality>", "<PrintModeKey>": "<AdvancedBW>", "<ToneKey>": "<Neutral>"}}'
+dr print.proof paper=ultrapro-luster size=letter '{"abw": {"toning": "neutral", "tone": "dark"}}'
 ```
+
+Every B&W control is available: `toning` neutral|cool|warm|sepia, `tone` darkest|darker|dark|normal|light,
+`brightness`, `contrast`, `shadowTonality`, `highlightTonality` (-25..25), `maxOpticalDensity`
+(-50..0), `highlightPointShift` off|on|fullPage, `wheelX`/`wheelY` (-75..75).
 
 What to look for: neutral neutrals, the 1% shadow steps still separate, nothing clipped at the
 top.

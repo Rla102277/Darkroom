@@ -105,22 +105,65 @@ pub fn specs() -> Vec<CommandSpec> {
                 let options = p.get("options").cloned().unwrap_or_else(|| json!({}));
                 h.print_submit(q, std::path::Path::new(file), title, copies, &options).map_err(|e| bad(C, e.to_string()))
             }),
+        cmd!(query "print.papers", "Papers", [], None,
+            "{} → {items: [{id, name, media, feed, overcoat, glossSmoothing, matte, profile?: path found on this Mac}]} — the papers Darkroom can print on the P900, with each one's ICC profile when it is installed",
+            always, |_, _| {
+                let installed = darkroom_print::installed_profiles();
+                let items: Vec<Value> = darkroom_print::p900::PAPERS.iter().map(|p| {
+                    let mut v = serde_json::to_value(p).unwrap_or_default();
+                    v["profile"] = json!(darkroom_print::p900::find_profile(p, &installed).map(|x| x.to_string_lossy().to_string()));
+                    v
+                }).collect();
+                Ok(json!({"items": items, "queue": darkroom_print::p900::QUEUE}))
+            }),
         cmd!(query "print.proof", "Print Proof Target", [], None,
-            "{queue, sheet?: letter, ppi?: 360, profile?: ICC path (color sheet) or omitted (Advanced B&W sheet), intent?, options: {driverKey: value} (media type, quality, color off or ABW mode, from print.options)} → {file, jobId, request} — makes the target and sends it in one step",
+            "{queue?: the P900 queue, paper: id from print.papers, size?: letter|a4|5x7|8x10|13x19|17x22|WxH (default letter), quality?: draft|high|max, abw?: {toning?: neutral|cool|warm|sepia, tone?: darkest|darker|dark|normal|light, brightness?, contrast?, shadowTonality?, highlightTonality?, maxOpticalDensity?, highlightPointShift?: off|on|fullPage, wheelX?, wheelY?} (present = the Advanced B&W sheet; absent = the color sheet in the paper's profile), profile?: ICC path to override the one found, intent?, ppi?: 360, options?: {driverKey: value} overrides} → {file, jobId, request, options, profile} — makes the proof target and sends it through the native driver in one step",
             print_enabled, |s, p| {
                 const C: &str = "print.proof";
                 let h = helper(s, C)?;
-                let q = str_param(p, "queue").filter(|q| !q.is_empty()).ok_or_else(|| bad(C, "queue required"))?;
-                let sheet = str_param(p, "sheet").unwrap_or("letter");
+                let queue = str_param(p, "queue").filter(|q| !q.is_empty()).unwrap_or(darkroom_print::p900::QUEUE);
+                let paper_id = str_param(p, "paper").filter(|x| !x.is_empty()).ok_or_else(|| bad(C, "paper required (see print.papers)"))?;
+                let paper = darkroom_print::p900::paper(paper_id).ok_or_else(|| bad(C, format!("unknown paper `{paper_id}` (see print.papers)")))?;
+                let size = darkroom_print::p900::Size::parse(str_param(p, "size").unwrap_or("letter")).ok_or_else(|| bad(C, "bad size"))?;
+                let quality = match str_param(p, "quality").unwrap_or("max") {
+                    "draft" => darkroom_print::p900::Quality::Draft,
+                    "high" => darkroom_print::p900::Quality::High,
+                    "max" => darkroom_print::p900::Quality::Max,
+                    other => return Err(bad(C, format!("unknown quality `{other}` (draft|high|max)"))),
+                };
+                let abw: Option<darkroom_print::p900::Abw> = match p.get("abw") {
+                    None | Some(Value::Null) => None,
+                    Some(v) => Some(serde_json::from_value(v.clone()).map_err(|e| bad(C, format!("abw: {e}")))?),
+                };
                 let ppi = p.get("ppi").and_then(Value::as_u64).unwrap_or(360).clamp(72, 1440) as u32;
-                let profile = str_param(p, "profile").filter(|x| !x.is_empty());
-                let name = if profile.is_some() { "proof-target-color" } else { "proof-target-bw" };
-                let (file, pname) = make_target(&print_dir(), sheet, ppi, profile, intent_param(p)?, name)?;
-                let options = p.get("options").cloned().unwrap_or_else(|| json!({}));
-                let title = format!("Darkroom proof: {}", pname.clone().unwrap_or_else(|| "Advanced B&W".into()));
-                let mut r = h.print_submit(q, &file, &title, 1, &options).map_err(|e| bad(C, e.to_string()))?;
+                // the file: in the paper profile for color, sRGB for ABW
+                let profile: Option<String> = if abw.is_some() {
+                    None
+                } else {
+                    match str_param(p, "profile").filter(|x| !x.is_empty()) {
+                        Some(x) => Some(x.to_string()),
+                        None => Some(darkroom_print::p900::find_profile(paper, &darkroom_print::installed_profiles())
+                            .ok_or_else(|| bad(C, format!("no P900 profile for {} is installed; install Red River's P900 profiles or pass profile=", paper.name)))?
+                            .to_string_lossy().to_string()),
+                    }
+                };
+                let (w, hgt) = size.inches();
+                let sheet = format!("{w}x{hgt}");
+                let name = if abw.is_some() { format!("proof-{}-abw", paper.id) } else { format!("proof-{}-color", paper.id) };
+                let (file, pname) = make_target(&print_dir(), &sheet, ppi, profile.as_deref(), intent_param(p)?, &name)?;
+                let job = darkroom_print::p900::Job { paper: paper.id.to_string(), size, quality, abw: abw.clone(), borderless: false, roll_width_in: None, banner: false };
+                let mut options = darkroom_print::p900::options(&job).map_err(|e| bad(C, e))?;
+                if let Some(extra) = p.get("options").and_then(Value::as_object) {
+                    for (k, v) in extra {
+                        options.insert(k.clone(), match v { Value::String(s) => s.clone(), other => other.to_string() });
+                    }
+                }
+                let opts_json = serde_json::to_value(&options).unwrap_or_default();
+                let title = format!("Darkroom proof: {} {}", paper.name, if abw.is_some() { "(Advanced B&W)" } else { "(color)" });
+                let mut r = h.print_submit(queue, &file, &title, 1, &opts_json).map_err(|e| bad(C, e.to_string()))?;
                 r["file"] = json!(file.to_string_lossy());
-                r["profile"] = json!(pname);
+                r["profile"] = json!(pname.or(profile));
+                r["options"] = opts_json;
                 Ok(r)
             }),
         cmd!(query "print.jobs", "Print Jobs", [], None, "{queue?} → {items: [lines from lpstat -o]}", print_enabled, |s, p| {
