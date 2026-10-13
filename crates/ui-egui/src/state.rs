@@ -189,6 +189,7 @@ impl AppearanceMode {
 #[serde(rename_all = "camelCase")]
 pub enum DarkTheme {
     #[default]
+    Darkroom,
     Charcoal,
     Midnight,
 }
@@ -203,9 +204,10 @@ pub enum LightTheme {
 }
 
 impl DarkTheme {
-    pub const ALL: [DarkTheme; 2] = [DarkTheme::Charcoal, DarkTheme::Midnight];
+    pub const ALL: [DarkTheme; 3] = [DarkTheme::Darkroom, DarkTheme::Charcoal, DarkTheme::Midnight];
     pub fn kind(self) -> crate::theme::ThemeKind {
         match self {
+            DarkTheme::Darkroom => crate::theme::ThemeKind::Darkroom,
             DarkTheme::Charcoal => crate::theme::ThemeKind::Charcoal,
             DarkTheme::Midnight => crate::theme::ThemeKind::Midnight,
         }
@@ -296,7 +298,7 @@ impl Default for AppSettings {
             grid_badges: GridBadges::Auto,
             keymap: Default::default(),
             appearance_mode: AppearanceMode::Dark,
-            dark_theme: DarkTheme::Charcoal,
+            dark_theme: DarkTheme::Darkroom,
             light_theme: LightTheme::Silver,
             favorite_themes: Vec::new(),
             display_profile: String::new(),
@@ -397,6 +399,7 @@ impl AppSettings {
     pub fn select_theme(&mut self, kind: crate::theme::ThemeKind) {
         use crate::theme::ThemeKind;
         match kind {
+            ThemeKind::Darkroom => self.dark_theme = DarkTheme::Darkroom,
             ThemeKind::Charcoal => self.dark_theme = DarkTheme::Charcoal,
             ThemeKind::Midnight => self.dark_theme = DarkTheme::Midnight,
             ThemeKind::Silver => self.light_theme = LightTheme::Silver,

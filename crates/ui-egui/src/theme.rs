@@ -82,7 +82,9 @@ pub struct Tokens {
 /// An interface theme. Each belongs to the dark or the light family.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum ThemeKind {
+    /// IA Darkroom: the Film Look Studio palette (green-black panels, cream text, gold accent).
     #[default]
+    Darkroom,
     Charcoal,
     Midnight,
     Silver,
@@ -90,15 +92,16 @@ pub enum ThemeKind {
 }
 
 impl ThemeKind {
-    pub const ALL: [ThemeKind; 4] = [ThemeKind::Charcoal, ThemeKind::Midnight, ThemeKind::Silver, ThemeKind::Paper];
+    pub const ALL: [ThemeKind; 5] = [ThemeKind::Darkroom, ThemeKind::Charcoal, ThemeKind::Midnight, ThemeKind::Silver, ThemeKind::Paper];
 
     pub fn is_dark(self) -> bool {
-        matches!(self, ThemeKind::Charcoal | ThemeKind::Midnight)
+        matches!(self, ThemeKind::Darkroom | ThemeKind::Charcoal | ThemeKind::Midnight)
     }
 
     /// The theme's id (settings value and command suffix).
     pub fn id(self) -> &'static str {
         match self {
+            ThemeKind::Darkroom => "darkroom",
             ThemeKind::Charcoal => "charcoal",
             ThemeKind::Midnight => "midnight",
             ThemeKind::Silver => "silver",
@@ -109,6 +112,7 @@ impl ThemeKind {
     /// The English display name.
     pub fn label(self) -> &'static str {
         match self {
+            ThemeKind::Darkroom => "Darkroom",
             ThemeKind::Charcoal => "Charcoal",
             ThemeKind::Midnight => "Midnight",
             ThemeKind::Silver => "Silver",
@@ -165,6 +169,36 @@ impl Tokens {
         let rgb = |v: u32| Color32::from_rgb((v >> 16) as u8, (v >> 8) as u8, v as u8);
         let base = Tokens::default();
         match kind {
+            ThemeKind::Darkroom => Tokens {
+                chrome: rgb(0x131917),
+                canvas: rgb(0x101312),
+                grid_bg: rgb(0x0e1211),
+                cell: rgb(0x171d1b),
+                cell_selected: rgb(0x26332e),
+                divider: rgb(0x2b332f),
+                inset: rgb(0x171d1b),
+                field: rgb(0x1d2622),
+                field_border: rgb(0x34352f),
+                button: rgb(0x1d2622),
+                button_border: rgb(0x4a4b44),
+                hover: rgb(0x26332e),
+                pressed: rgb(0x2e3c36),
+                tool_active: rgb(0x2e3c36),
+                text: rgb(0xe9e1d0),
+                text_label: rgb(0xc9c5bb),
+                text_dim: rgb(0x8f958e),
+                text_disabled: rgb(0x5b615c),
+                icon: rgb(0xb8a178),
+                track: rgb(0x4a4b44),
+                thumb: rgb(0xb8a178),
+                thumb_hover: rgb(0xe6d4b3),
+                accent: rgb(0xd4b86a),
+                star: rgb(0xd4b86a),
+                pick: rgb(0xe9e1d0),
+                reject: rgb(0xb9785d),
+                caution: rgb(0xc6a66d),
+                ..base
+            },
             ThemeKind::Charcoal => base,
             ThemeKind::Midnight => Tokens {
                 chrome: rgb(0x1e1e1e),

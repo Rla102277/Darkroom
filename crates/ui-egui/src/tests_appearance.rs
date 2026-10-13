@@ -24,12 +24,12 @@ fn frame(app: &mut LightcraftApp, ctx: &egui::Context) {
 #[test]
 fn new_users_keep_the_dark_look_and_old_settings_load_unchanged() {
     let s = AppSettings::default();
-    assert_eq!((s.appearance_mode, s.dark_theme, s.light_theme), (AppearanceMode::Dark, DarkTheme::Charcoal, LightTheme::Silver));
-    assert_eq!(s.theme(Some(egui::Theme::Light)), ThemeKind::Charcoal, "Auto is opt-in");
+    assert_eq!((s.appearance_mode, s.dark_theme, s.light_theme), (AppearanceMode::Dark, DarkTheme::Darkroom, LightTheme::Silver));
+    assert_eq!(s.theme(Some(egui::Theme::Light)), ThemeKind::Darkroom, "Auto is opt-in");
     // a ui.json saved before appearance modes existed
     let old: UiState = serde_json::from_str(r#"{"settings": {"gridBadges": "always", "startupView": "detail"}}"#).unwrap();
     assert_eq!(old.settings.appearance_mode, AppearanceMode::Dark);
-    assert_eq!(old.settings.dark_theme, DarkTheme::Charcoal);
+    assert_eq!(old.settings.dark_theme, DarkTheme::Darkroom);
     assert_eq!(old.settings.light_theme, LightTheme::Silver);
     assert_eq!(old.settings.startup_view, crate::state::StartupView::Detail);
     // and the Charcoal tokens are the ones IA Darkroom always had
@@ -256,5 +256,5 @@ fn favorites_validate_roundtrip_and_stars_toggle_without_selecting() {
     h.step();
     assert_eq!(h.app.ui.settings.appearance_mode, AppearanceMode::Light);
     assert_eq!(h.app.ui.settings.light_theme, LightTheme::Paper);
-    assert_eq!(h.app.ui.settings.dark_theme, DarkTheme::Charcoal);
+    assert_eq!(h.app.ui.settings.dark_theme, DarkTheme::Darkroom);
 }
