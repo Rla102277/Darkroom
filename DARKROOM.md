@@ -16,25 +16,35 @@ pulling upstream updates stays cheap:
 
 ## Build on the Mac
 
-Once, on each Mac:
+Once, on each Mac (Xcode command line tools, Rust, the code):
 
 ```sh
-xcode-select --install            # Swift and the macOS SDK (skip if Xcode is installed)
-curl https://sh.rustup.rs -sSf | sh   # Rust, then open a new terminal
+xcode-select --install
+curl https://sh.rustup.rs -sSf | sh
 git clone https://github.com/Rla102277/darkroom ~/Developer/darkroom
 ```
 
-Then, every time:
+Then one command builds everything and installs **IA Darkroom.app** into /Applications:
 
 ```sh
-cd ~/Developer/darkroom
-(cd helper/darkroom-helper && swift build -c release)
-cargo run --release -p lightcraft
+cd ~/Developer/darkroom && git pull origin main && scripts/build-ia-darkroom.sh
 ```
 
-The first `cargo run` compiles for a while (10 to 20 minutes on an M-series Mac); after that it
-is seconds. The app looks for the helper at `helper/darkroom-helper/.build/release/darkroom-helper`
-(or `$DARKROOM_HELPER`), so build the helper before running the app.
+The first build takes 10 to 20 minutes on an M-series Mac; after that a minute or two. The app
+carries the Swift helper (Contents/Helpers), the command-line tool and the bundled Looks, so it is
+self-contained. It is ad hoc signed: the first launch is right-click > Open.
+
+For development, `cargo run --release -p lightcraft` runs the app straight from the tree (it finds
+the helper in `helper/darkroom-helper/.build/release/` and the Looks in `looks/`).
+
+## The library
+
+The library lives on iCloud Drive when iCloud Drive exists:
+`iCloud Drive/Documents/Projects/Photos/IA Darkroom/IA Darkroom Library`, so both Macs open the
+same catalog. Linked originals are not in it: each Mac fetches its own copies into
+`~/Library/Application Support/Darkroom/originals/`, and the link table is keyed by Apple's cloud
+identifier, which is the same everywhere. Open a different folder with File > Open Library or
+`--library DIR`.
 
 ## First run
 
@@ -59,9 +69,24 @@ $H assets '{"limit": 3}'
 $H keywords '{"ids": ["<an id from assets>"]}'
 ```
 
+## Printing
+
+File > Print Sheet… (Cmd+P) prints the selected photo as the signature sheet (13x19, 0.25 inch
+margins, 0.4 inch strip with the caption) or a plain sheet, on any paper the P900 driver lists, in
+color (IA Darkroom converts into the paper's Red River profile, the driver's color is off) or in
+Advanced B&W Photo with every one of the driver's B&W controls. Native Epson driver only; an
+AirPrint queue is refused. The same thing from the terminal is `print.sheet`; see PRINT-PROOF.md
+for the proof targets and the driver option names.
+
+## Write-back to Photos
+
+File > Push Decisions to Apple Photos: picks become favorites plus the keyword `Pick: Select`,
+rejects get `Pick: No`, and keywords, titles and captions go back to the linked Photos items.
+Nothing is hidden or deleted by IA Darkroom.
+
 ## What is not here yet
 
-- Writing back from the grid (favorites, hidden, keywords) is wired as commands
-  (`photos.set`, `photos.setKeywords`, `photos.addToAlbum`) but has no buttons yet.
 - Linking runs on the window's thread: a big album makes the window busy the first time.
-- Printing: next milestone.
+- Grading keys that write back live (today: grade, then Push).
+- The Look Studio workspace (the Looks apply from the Profile browser today).
+- Roll paper from the dialog (the command takes `rollWidth`; the dialog does not yet).

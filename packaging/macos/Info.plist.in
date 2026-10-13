@@ -44,6 +44,8 @@
   <false/>
   <!-- Shown by macOS when IA Darkroom first asks to control Photos (Export > Add to Apple Photos;
        needs the apple-events entitlement in entitlements.plist). -->
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>IA Darkroom reads your Photos library to browse, grade and print your pictures, and writes back favorites, keywords and albums. It never deletes anything.</string>
   <key>NSAppleEventsUsageDescription</key>
   <string>IA Darkroom asks Photos to import the photos you export when you choose Add to Apple Photos in the Export dialog.</string>
   <key>NSHumanReadableCopyright</key>
