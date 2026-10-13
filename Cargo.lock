@@ -1205,6 +1205,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "darkroom-print"
+version = "0.7.1"
+dependencies = [
+ "lightcraft-codecs",
+ "log",
+ "moxcms 0.9.1",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3226,6 +3238,7 @@ version = "0.7.1"
 dependencies = [
  "ab_glyph",
  "darkroom-photos",
+ "darkroom-print",
  "harfrust",
  "jxl-oxide",
  "libc",

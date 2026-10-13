@@ -40,6 +40,7 @@ lightcraft-heif = { path = "crates/heif" }
 lightcraft-segment = { path = "crates/segment" }
 lightcraft-geocode = { path = "crates/geocode" }
 darkroom-photos = { path = "crates/darkroom-photos" }
+darkroom-print = { path = "crates/darkroom-print" }
 
 # foundation
 thiserror = "2"

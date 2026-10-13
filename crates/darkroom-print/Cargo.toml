@@ -1,0 +1,17 @@
+[package]
+name = "darkroom-print"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Darkroom printing: the test target, conversion into a paper profile, and the 16-bit TIFF handed to the Epson driver"
+
+[lints]
+workspace = true
+
+[dependencies]
+lightcraft-codecs = { workspace = true }
+moxcms = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }

@@ -445,6 +445,26 @@ impl Photos {
         let v = self.call("album.add", json!({"album": album, "ids": ids}), LONG)?;
         Ok((v.get("added").and_then(Value::as_u64).unwrap_or(0), v.get("requested").and_then(Value::as_u64).unwrap_or(0)))
     }
+    // ---------- printing (the same helper reaches the macOS print system)
+
+    /// The print queues on this Mac, each flagged `airPrint` or `epsonDriver` from its PPD.
+    pub fn print_queues(&self) -> Result<Value> {
+        self.call("print.queues", json!({}), QUICK)
+    }
+
+    /// Every option the queue's driver exposes (`lpoptions -l`), with the PPD's labels.
+    pub fn print_options(&self, queue: &str) -> Result<Value> {
+        self.call("print.options", json!({"queue": queue}), QUICK)
+    }
+
+    /// Hands a prepared file to the queue with driver options. Refused for AirPrint queues.
+    pub fn print_submit(&self, queue: &str, file: &Path, title: &str, copies: u32, options: &Value) -> Result<Value> {
+        self.call("print.submit", json!({"queue": queue, "file": file.to_string_lossy(), "title": title, "copies": copies, "options": options}), QUICK)
+    }
+
+    pub fn print_jobs(&self, queue: Option<&str>) -> Result<Value> {
+        self.call("print.jobs", json!({"queue": queue.unwrap_or("")}), QUICK)
+    }
 }
 
 /// A runner that answers every call with the same JSON (tests).

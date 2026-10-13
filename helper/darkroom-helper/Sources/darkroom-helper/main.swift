@@ -254,7 +254,8 @@ func cmdStatus() {
 }
 
 func walk(_ collections: PHFetchResult<PHCollection>, depth: Int, parent: String?, into rows: inout [[String: Any]], ids: inout [String]) {
-    collections.enumerateObjects { c, _, _ in
+    for i in 0..<collections.count {
+        let c = collections.object(at: i)
         ids.append(c.localIdentifier)
         rows.append(["_": c, "depth": depth, "parent": parent ?? ""])
         if let list = c as? PHCollectionList {
@@ -663,6 +664,181 @@ func cmdAlbumAdd(_ p: [String: Any]) {
     emit(["added": added, "requested": assets.count, "albumCount": after.count])
 }
 
+
+// MARK: - printing (milestone 2: the proof)
+
+/// Runs a command-line tool and returns stdout (throws on a non-zero exit with stderr).
+func runTool(_ path: String, _ args: [String], timeout: TimeInterval = 120) throws -> String {
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: path)
+    task.arguments = args
+    let out = Pipe()
+    let err = Pipe()
+    task.standardOutput = out
+    task.standardError = err
+    try task.run()
+    let data = out.fileHandleForReading.readDataToEndOfFile()
+    let errData = err.fileHandleForReading.readDataToEndOfFile()
+    task.waitUntilExit()
+    if task.terminationStatus != 0 {
+        let msg = String(data: errData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        throw HelperError(message: msg.isEmpty ? "\(path) exited with \(task.terminationStatus)" : msg)
+    }
+    return String(data: data, encoding: .utf8) ?? ""
+}
+
+/// What the queue's PPD says about its driver. The native Epson driver's PPD names an Epson
+/// filter; the AirPrint queue macOS makes by itself is a generic URF/PCLm one.
+func ppdInfo(queue: String) -> [String: Any] {
+    let path = "/private/etc/cups/ppd/\(queue).ppd"
+    guard let text = try? String(contentsOfFile: path, encoding: .isoLatin1) else {
+        return ["ppd": false]
+    }
+    var info: [String: Any] = ["ppd": true, "ppdPath": path]
+    var nick = ""
+    var filters: [String] = []
+    var manufacturer = ""
+    var urf = false
+    for line in text.split(separator: "\n") {
+        let l = String(line)
+        if l.hasPrefix("*NickName:") { nick = l.replacingOccurrences(of: "*NickName:", with: "").trimmingCharacters(in: CharacterSet(charactersIn: " \"")) }
+        if l.hasPrefix("*Manufacturer:") { manufacturer = l.replacingOccurrences(of: "*Manufacturer:", with: "").trimmingCharacters(in: CharacterSet(charactersIn: " \"")) }
+        if l.hasPrefix("*cupsFilter") { filters.append(l) }
+        if l.contains("image/urf") || l.contains("application/PCLm") || l.hasPrefix("*cupsUrfSupported") { urf = true }
+    }
+    let epsonFilter = filters.contains { $0.lowercased().contains("epson") || $0.contains("/Library/Printers/EPSON") }
+    info["nickName"] = nick
+    info["manufacturer"] = manufacturer
+    info["filters"] = filters
+    info["airPrint"] = urf && !epsonFilter || nick.lowercased().contains("airprint")
+    info["epsonDriver"] = epsonFilter
+    return info
+}
+
+/// `print.queues` -> {items: [{name, model, isDefault, airPrint, epsonDriver, nickName, state}]}
+func cmdPrintQueues() {
+    var items: [[String: Any]] = []
+    let defaultName = NSPrintInfo.defaultPrinter?.name ?? ""
+    for name in NSPrinter.printerNames {
+        var row: [String: Any] = ["name": name, "isDefault": name == defaultName]
+        if let p = NSPrinter(name: name) {
+            row["model"] = p.type
+        }
+        // CUPS queue name: NSPrinter names are display names; lpstat lists queue names
+        row.merge(ppdInfo(queue: name)) { _, new in new }
+        items.append(row)
+    }
+    // queues CUPS knows under another name than the display name
+    if let lp = try? runTool("/usr/bin/lpstat", ["-p"]) {
+        for line in lp.split(separator: "\n") where line.hasPrefix("printer ") {
+            let parts = line.split(separator: " ")
+            if parts.count >= 2 {
+                let q = String(parts[1])
+                if !items.contains(where: { ($0["name"] as? String) == q }) {
+                    var row: [String: Any] = ["name": q, "isDefault": false, "state": String(line)]
+                    row.merge(ppdInfo(queue: q)) { _, new in new }
+                    items.append(row)
+                }
+            }
+        }
+    }
+    emit(["items": items, "default": defaultName])
+}
+
+/// `print.options {queue}` -> {options: [{key, label, choices: [{value, label, current}]}]}
+/// Everything the driver exposes, straight from `lpoptions -l`. This is how the exact names of
+/// media type, quality, color mode and Advanced B&W are found on this Mac and this driver.
+func cmdPrintOptions(_ p: [String: Any]) {
+    guard let queue = p["queue"] as? String, !queue.isEmpty else { fail("queue required") }
+    let text: String
+    do { text = try runTool("/usr/bin/lpoptions", ["-p", queue, "-l"]) } catch { fail(error.localizedDescription) }
+    var options: [[String: Any]] = []
+    for line in text.split(separator: "\n") {
+        // Key/Label: a b *c d
+        guard let colon = line.firstIndex(of: ":") else { continue }
+        let head = String(line[..<colon])
+        let tail = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
+        let keyLabel = head.split(separator: "/", maxSplits: 1).map(String.init)
+        let key = keyLabel.first ?? head
+        let label = keyLabel.count > 1 ? keyLabel[1] : head
+        var choices: [[String: Any]] = []
+        for tok in tail.split(separator: " ") {
+            var v = String(tok)
+            let current = v.hasPrefix("*")
+            if current { v.removeFirst() }
+            choices.append(["value": v, "current": current])
+        }
+        options.append(["key": key, "label": label, "choices": choices])
+    }
+    // the human labels for each choice live in the PPD
+    if let ppd = try? String(contentsOfFile: "/private/etc/cups/ppd/\(queue).ppd", encoding: .isoLatin1) {
+        var labels: [String: String] = [:]
+        for line in ppd.split(separator: "\n") where line.hasPrefix("*") && !line.hasPrefix("*%") {
+            // *Key Value/Label: ...
+            guard let colon = line.firstIndex(of: ":") else { continue }
+            let head = String(line[line.index(after: line.startIndex)..<colon])
+            let sp = head.split(separator: " ", maxSplits: 1).map(String.init)
+            if sp.count == 2, let slash = sp[1].firstIndex(of: "/") {
+                let value = String(sp[1][..<slash])
+                let lab = String(sp[1][sp[1].index(after: slash)...])
+                labels["\(sp[0])\u{1F}\(value)"] = lab
+            }
+        }
+        options = options.map { opt in
+            var o = opt
+            let key = o["key"] as! String
+            o["choices"] = (o["choices"] as! [[String: Any]]).map { c in
+                var c2 = c
+                if let l = labels["\(key)\u{1F}\(c["value"] as! String)"] { c2["label"] = l }
+                return c2
+            }
+            return o
+        }
+    }
+    emit(["queue": queue, "options": options])
+}
+
+/// `print.submit {queue, file, title?, copies?, options: {key: value}}` -> {jobId, request}
+/// Hands a file the app has already prepared (16-bit TIFF in the paper's profile) to the queue
+/// with the driver options named, through `lp`. The driver does the rest.
+func cmdPrintSubmit(_ p: [String: Any]) {
+    guard let queue = p["queue"] as? String, !queue.isEmpty else { fail("queue required") }
+    guard let file = p["file"] as? String, FileManager.default.fileExists(atPath: file) else { fail("file required and must exist") }
+    let info = ppdInfo(queue: queue)
+    if info["airPrint"] as? Bool == true && p["allowAirPrint"] as? Bool != true {
+        fail("\(queue) is an AirPrint queue. Darkroom prints through the native Epson driver only: add the printer again with Epson's driver (System Settings > Printers & Scanners, choose the EPSON SC-P900 Series driver, not AirPrint).")
+    }
+    var args = ["-d", queue]
+    if let title = p["title"] as? String, !title.isEmpty { args += ["-t", title] }
+    if let copies = p["copies"] as? Int, copies > 1 { args += ["-n", String(copies)] }
+    var used: [String] = []
+    if let opts = p["options"] as? [String: Any] {
+        for (k, v) in opts.sorted(by: { $0.key < $1.key }) {
+            let val: String
+            if let b = v as? Bool { val = b ? "True" : "False" } else { val = "\(v)" }
+            args += ["-o", "\(k)=\(val)"]
+            used.append("\(k)=\(val)")
+        }
+    }
+    args.append(file)
+    let out: String
+    do { out = try runTool("/usr/bin/lp", args) } catch { fail(error.localizedDescription) }
+    // "request id is P900-42 (1 file(s))"
+    var jobId = ""
+    if let r = out.range(of: "request id is ") {
+        jobId = String(out[r.upperBound...]).split(separator: " ").first.map(String.init) ?? ""
+    }
+    emit(["jobId": jobId, "request": out.trimmingCharacters(in: .whitespacesAndNewlines), "options": used, "queue": queue])
+}
+
+/// `print.jobs {queue?}` -> {items: [..]} what is in the queue (lpstat -o).
+func cmdPrintJobs(_ p: [String: Any]) {
+    var args = ["-o"]
+    if let q = p["queue"] as? String, !q.isEmpty { args.append(q) }
+    let out = (try? runTool("/usr/bin/lpstat", args)) ?? ""
+    emit(["items": out.split(separator: "\n").map(String.init)])
+}
+
 // MARK: - main
 
 let (command, params) = readArgs()
@@ -678,6 +854,10 @@ case "set": cmdSet(params)
 case "album.create": cmdAlbumCreate(params)
 case "folder.create": cmdFolderCreate(params)
 case "album.add": cmdAlbumAdd(params)
-case "version": emit(["version": "0.1.0", "commands": ["status", "albums", "assets", "originals", "thumbs", "keywords", "keywords.set", "set", "album.create", "folder.create", "album.add"]])
+case "print.queues": cmdPrintQueues()
+case "print.options": cmdPrintOptions(params)
+case "print.submit": cmdPrintSubmit(params)
+case "print.jobs": cmdPrintJobs(params)
+case "version": emit(["version": "0.1.0", "commands": ["status", "albums", "assets", "originals", "thumbs", "keywords", "keywords.set", "set", "album.create", "folder.create", "album.add", "print.queues", "print.options", "print.submit", "print.jobs"]])
 default: fail("unknown command \(command)")
 }
