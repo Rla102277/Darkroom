@@ -278,7 +278,7 @@ fn a_manifest_that_does_not_validate_or_name_the_file_is_refused() {
 }
 
 /// Another app's model folder (#1381): an `.onnx` with no manifest, then with that app's `model.json` beside it, then
-/// with the `model.json` renamed. Each refusal says what is wrong and where LightCraft's manifest is described.
+/// with the `model.json` renamed. Each refusal says what is wrong and where IA Darkroom's manifest is described.
 #[test]
 fn inspecting_another_apps_model_folder_says_what_is_missing() {
     let dir = temp_dir("denoise-foreign");
@@ -658,7 +658,7 @@ fn settings_are_checked_saved_and_a_paused_pump_starts_nothing() {
     (st.run_on, st.gpu) = (None, Some(false));
     crate::denoise::write_settings(&models, &st).unwrap();
     assert_eq!(x.s.execute("denoise.models.list", &json!({})).unwrap()["runOn"], "cpu");
-    // choosing where it runs lets the card be tried again after a set-up that closed LightCraft
+    // choosing where it runs lets the card be tried again after a set-up that closed IA Darkroom
     let onnx = crate::denoise::installed_models(&models).first().unwrap().onnx.clone();
     let marker = onnx.with_file_name(crate::denoise::GPU_SETUP_MARKER);
     std::fs::write(&marker, "setting up").unwrap();

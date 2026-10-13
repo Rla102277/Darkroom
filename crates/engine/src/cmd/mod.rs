@@ -31,6 +31,7 @@ pub mod missing;
 mod organize;
 pub mod photos;
 pub mod print;
+pub mod looks;
 mod prefs;
 mod preset_files;
 pub mod previews;
@@ -170,6 +171,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(activity::specs());
         v.extend(photos::specs());
         v.extend(print::specs());
+        v.extend(looks::specs());
         v
     })
 }

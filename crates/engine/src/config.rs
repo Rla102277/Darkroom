@@ -1,4 +1,4 @@
-//! Where LightCraft keeps per-user data on this machine: the config folder (app settings, camera
+//! Where IA Darkroom keeps per-user data on this machine: the config folder (app settings, camera
 //! profiles, face and denoise models).
 //!
 //! Hosts that have a file system (the desktop app, the CLI, the MCP server) share these defaults so a model
@@ -18,7 +18,7 @@ enum Platform {
     Other,
 }
 
-/// LightCraft's settings folder. A nonempty `$LIGHTCRAFT_CONFIG_DIR` overrides the platform default.
+/// IA Darkroom's settings folder. A nonempty `$LIGHTCRAFT_CONFIG_DIR` overrides the platform default.
 /// The override is the complete directory; no application-name suffix is appended. An explicitly
 /// empty value disables the settings directory instead of falling back to a personal profile.
 pub fn config_dir() -> Option<PathBuf> {
@@ -131,8 +131,8 @@ mod config_tests {
     #[test]
     fn config_unset_override_keeps_platform_defaults() {
         let vars = [("HOME", "/user"), ("APPDATA", "/roaming"), ("XDG_CONFIG_HOME", "/xdg")];
-        assert_eq!(resolve(Platform::Mac, &vars), Some(PathBuf::from("/user/Library/Application Support/LightCraft")));
-        assert_eq!(resolve(Platform::Windows, &vars), Some(PathBuf::from("/roaming/LightCraft")));
+        assert_eq!(resolve(Platform::Mac, &vars), Some(PathBuf::from("/user/Library/Application Support/IA Darkroom")));
+        assert_eq!(resolve(Platform::Windows, &vars), Some(PathBuf::from("/roaming/IA Darkroom")));
         assert_eq!(resolve(Platform::Other, &vars), Some(PathBuf::from("/xdg/lightcraft")));
         assert_eq!(resolve(Platform::Other, &[("HOME", "/user")]), Some(PathBuf::from("/user/.config/lightcraft")));
         for platform in [Platform::Mac, Platform::Windows, Platform::Other] {

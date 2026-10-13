@@ -1,10 +1,10 @@
-//! LightCraft desktop app.
+//! IA Darkroom desktop app.
 //!
 //! Usage: `lightcraft [--library DIR | --memory] [--no-demo] [--control <port>] [files or folders…]`
 //!
 //! The library (catalog, presets, thumbnail cache) lives in `--library DIR`, else
 //! `$LIGHTCRAFT_LIBRARY`, else the library last opened with Settings → Open Library…, else
-//! `~/Pictures/LightCraft Library`; a new library starts with the
+//! `~/Pictures/IA Darkroom Library`; a new library starts with the
 //! procedural demo photos unless `--no-demo` or files are given. Files and folders on the command
 //! line are imported (duplicates are skipped). `--memory` runs an in-memory session that writes
 //! nothing (demo photos unless files are given; used by the README showcase scripts). A library
@@ -107,7 +107,7 @@ impl eframe::App for App {
 /// a second; anything slower gives way to quitting.
 const EXIT_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
 
-/// The window's renderer (egui-wgpu): eframe's defaults, with LightCraft's backend choice — DX12
+/// The window's renderer (egui-wgpu): eframe's defaults, with IA Darkroom's backend choice — DX12
 /// alone on Windows unless `LIGHTCRAFT_GPU_BACKEND` / `WGPU_BACKEND` say otherwise (issue #136:
 /// with Vulkan in the set, wgpu loads the Vulkan driver even when it then picks DX12) — and DX12
 /// shaders compiled with FXC, never a stray `dxcompiler.dll` (issue #471).
@@ -156,8 +156,8 @@ fn gpu_crash_check_at(marker: Option<std::path::PathBuf>, in_memory: bool) -> Op
 
 fn gpu_crash_notice(what: &str) -> String {
     format!(
-        "LightCraft closed unexpectedly while starting the GPU last time ({what}), so GPU rendering is now off and photos render on the CPU. \
-         To try the GPU again, turn on Settings ▸ Performance ▸ Use the GPU for rendering; to try another graphics backend, start LightCraft with \
+        "IA Darkroom closed unexpectedly while starting the GPU last time ({what}), so GPU rendering is now off and photos render on the CPU. \
+         To try the GPU again, turn on Settings ▸ Performance ▸ Use the GPU for rendering; to try another graphics backend, start IA Darkroom with \
          LIGHTCRAFT_GPU_BACKEND=dx12, vulkan or off (see docs/gpu-pipeline.md → Troubleshooting)."
     )
 }
@@ -343,7 +343,7 @@ impl PrefsWriter {
             Err(e) => {
                 if !self.failing {
                     log::warn!("{e}");
-                    app.notices.push(format!("{e}. LightCraft keeps trying."));
+                    app.notices.push(format!("{e}. IA Darkroom keeps trying."));
                 }
                 self.failing = true;
                 // don't retry every frame
@@ -556,7 +556,7 @@ fn services(cc: &eframe::CreationContext<'_>, log_file: Option<&std::path::Path>
         save_preset_file: Some(Box::new(|name: &str| {
             file_dialog()
                 .set_title(lightcraft_ui_egui::i18n::tr("Export Presets"))
-                .add_filter_nocase(lightcraft_ui_egui::i18n::tr("LightCraft Preset"), &["lcpreset"])
+                .add_filter_nocase(lightcraft_ui_egui::i18n::tr("IA Darkroom Preset"), &["lcpreset"])
                 .set_file_name(name)
                 .save_file()
                 .map(|p| p.to_string_lossy().to_string())
@@ -612,6 +612,13 @@ fn services(cc: &eframe::CreationContext<'_>, log_file: Option<&std::path::Path>
 fn open_session(in_memory: bool, dir: Option<std::path::PathBuf>, seed_demo: bool) -> (Session, Option<LibraryProblem>) {
     let (mut s, problem) = open_library_session(in_memory, dir, seed_demo);
     s.face_models_dir = lightcraft_engine::config::default_face_models_dir();
+    // Darkroom: the bundled Infinite Arch Looks go into every library's Profile browser once
+    if problem.is_none() {
+        let n = lightcraft_engine::cmd::looks::install_bundled(&mut s).len();
+        if n > 0 {
+            log::info!("looks: {n} bundled group(s) installed");
+        }
+    }
     // Control requests are answered on the UI thread: Add to Apple Photos must not wait there
     s.apple_photos_background = true;
     (s, problem)
@@ -658,7 +665,7 @@ lightcraft — photo library + raw developer
 USAGE: lightcraft [OPTIONS] [FILES/FOLDERS…]   (files and folders are imported)
 
 OPTIONS:
-  --library DIR    open (or create) this library (default: ~/Pictures/LightCraft Library; env LIGHTCRAFT_LIBRARY)
+  --library DIR    open (or create) this library (default: ~/Pictures/IA Darkroom Library; env LIGHTCRAFT_LIBRARY)
   --no-demo        don't seed a new library with the procedural demo photos
   --memory         throwaway in-memory session (alias --demo); nothing is saved
   --control PORT   serve the JSON-lines control channel on 127.0.0.1:PORT (env LIGHTCRAFT_CONTROL_PORT;
@@ -670,9 +677,9 @@ ENVIRONMENT:
   LIGHTCRAFT_GPU_BACKEND=dx12|vulkan|metal|auto|off   graphics backend (default: DX12 on Windows, Metal on macOS,
                    Vulkan on Linux; off = render on the CPU); else WGPU_BACKEND. LIGHTCRAFT_GPU=0: CPU rendering.
   LIGHTCRAFT_SAM3_DIR=DIR   the SAM 3 model for Object / Describe masks (default: <settings folder>/models/sam3;
-                   optional: LightCraft offers to download it when first needed)
+                   optional: IA Darkroom offers to download it when first needed)
   LIGHTCRAFT_SAM3_MIRRORS=URL,…   where to download the SAM 3 model from (base URLs, tried in order)
-  LIGHTCRAFT_LOG=info|debug   more log detail from LightCraft itself (default: info from LightCraft, warnings
+  LIGHTCRAFT_LOG=info|debug   more log detail from IA Darkroom itself (default: info from IA Darkroom, warnings
                    from other crates); else RUST_LOG=<env_logger directives>. Records go to stderr and to
                    <settings folder>/logs/lightcraft.log (previous runs: lightcraft.1.log, lightcraft.2.log)
 ";
@@ -771,7 +778,7 @@ fn main() -> eframe::Result {
         match log_dir().filter(|_| !in_memory) {
             Some(dir) => match logger.attach_dir(&dir) {
                 Ok(path) => {
-                    log::info!("LightCraft {}, log file {}", env!("CARGO_PKG_VERSION"), path.display());
+                    log::info!("IA Darkroom {}, log file {}", env!("CARGO_PKG_VERSION"), path.display());
                     log_file = Some(path);
                 }
                 // The file sink has given up by now, so this goes to standard error only.
@@ -811,7 +818,7 @@ fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         renderer,
         viewport: egui::ViewportBuilder::default()
-            .with_title("Darkroom")
+            .with_title("IA Darkroom")
             .with_inner_size([1600.0, 1000.0])
             .with_min_inner_size([900.0, 560.0])
             .with_drag_and_drop(true)
@@ -840,7 +847,7 @@ fn main() -> eframe::Result {
     }
     let started = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         eframe::run_native(
-            "Darkroom",
+            "IA Darkroom",
             options,
             Box::new(move |cc| {
                 // the window's renderer is up (eframe calls this after creating it)
@@ -912,7 +919,7 @@ fn main() -> eframe::Result {
     if let Err(e) = &started {
         // the renderer never came up: start again, which tries the next one in the chain
         if window_gpu::relaunch_after_failure(&win_files) {
-            log::error!("LightCraft could not open its window with {}: {e}; trying the next renderer", window_renderer.name());
+            log::error!("IA Darkroom could not open its window with {}: {e}; trying the next renderer", window_renderer.name());
             return Ok(());
         }
         startup_failed(&e.to_string(), log_file.as_deref());
@@ -924,7 +931,7 @@ fn main() -> eframe::Result {
 /// message box naming the log file, instead of exiting without a trace — the release builds have
 /// no console on Windows, and an app started from Finder shows no standard error (issue #260).
 fn startup_failed(error: &str, log_file: Option<&std::path::Path>) {
-    log::error!("LightCraft could not open its window: {error}");
+    log::error!("IA Darkroom could not open its window: {error}");
     if std::env::var_os("LIGHTCRAFT_NO_PREFS").is_some() {
         return; // tests and scripts: no dialog to click away
     }

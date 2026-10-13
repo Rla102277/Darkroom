@@ -64,7 +64,7 @@ fn intent_param(p: &Value) -> Result<darkroom_print::Intent> {
 
 
 /// `print.sheet`: one catalog photo on a page (the signature sheet by default), rendered at the
-/// print's density through LightCraft's own pipeline, composed, converted into the paper's
+/// print's density through IA Darkroom's own pipeline, composed, converted into the paper's
 /// profile, and either saved as a 16-bit TIFF or sent to the P900.
 fn sheet(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "print.sheet";

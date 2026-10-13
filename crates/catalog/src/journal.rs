@@ -231,7 +231,7 @@ pub fn decode_record(line: &str) -> Option<(u64, Op)> {
 enum Line {
     Record(u64, Op),
     /// The CRC matches — the line is exactly what was written — but the op doesn't parse: it
-    /// was written by a newer LightCraft (an op or field this version doesn't know), not damaged.
+    /// was written by a newer IA Darkroom (an op or field this version doesn't know), not damaged.
     Newer(u64),
     /// Malformed or a CRC mismatch: torn or damaged.
     Bad,
@@ -255,7 +255,7 @@ fn decode_line(line: &str) -> Line {
     }
 }
 
-/// The error for a library written by a newer LightCraft.
+/// The error for a library written by a newer IA Darkroom.
 fn newer(what: String) -> CatalogError {
     CatalogError::Newer(format!("{what}; this version reads catalog format v{VERSION} and older"))
 }
@@ -322,7 +322,7 @@ impl Journal {
                 // the header first: a newer snapshot may not parse as this version's catalog
                 let h: SnapHeader = serde_json::from_slice(&bytes).map_err(|e| CatalogError::Corrupt(format!("{SNAPSHOT}: {e}")))?;
                 if h.format != FORMAT {
-                    return Err(CatalogError::Corrupt(format!("{SNAPSHOT}: not a LightCraft catalog (format {:?})", h.format)));
+                    return Err(CatalogError::Corrupt(format!("{SNAPSHOT}: not a IA Darkroom catalog (format {:?})", h.format)));
                 }
                 if h.version > VERSION {
                     return Err(newer(format!("{SNAPSHOT} is catalog format v{}", h.version)));

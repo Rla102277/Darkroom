@@ -1,11 +1,11 @@
-# Darkroom
+# IA Darkroom
 
 The Infinite Arch's photo app: Apple Photos organizing, a working catalog, and printing to the
-Epson P900 through the native driver. A private fork of [LightCraft](https://github.com/storytold/lightcraft)
+Epson P900 through the native driver. A private fork of the open-source LightCraft code (github.com/storytold/lightcraft)
 (branch `upstream-b3d392b` is the untouched base; `darkroom` and `main` carry our work).
 
 The spec lives in the Darkroom doc (Spec v2). Our code stays in new crates and one new folder so
-pulling LightCraft's updates stays cheap:
+pulling upstream updates stays cheap:
 
 | Where | What |
 |---|---|

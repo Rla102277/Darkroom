@@ -238,7 +238,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     heading(ui, t, crate::i18n::tr("Raw defaults"));
     hint(ui, t, crate::i18n::tr("Settings new raw photos start from. Changing them doesn't touch photos already in the library."));
     row(ui, t, crate::i18n::tr("Raw photos"), |ui| {
-        if let Some(v) = preset_combo(app, ui, "settingsRawPreset", d.raw_preset.as_deref(), "LightCraft Default") {
+        if let Some(v) = preset_combo(app, ui, "settingsRawPreset", d.raw_preset.as_deref(), "IA Darkroom Default") {
             let _ = app.run("library.preferences", json!({"import": {"rawPreset": v}}));
         }
     });
@@ -257,7 +257,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
             for (i, cam) in cams.iter().enumerate() {
                 let entry = d.cameras.iter().find(|c| c.camera.eq_ignore_ascii_case(cam));
                 row(ui, t, cam, |ui| {
-                    // "Raw default" = no entry; otherwise the entry's preset (None = LightCraft Default)
+                    // "Raw default" = no entry; otherwise the entry's preset (None = IA Darkroom Default)
                     const RAW_DEFAULT: &str = "\u{1}raw";
                     let current = match entry {
                         None => Some(RAW_DEFAULT),
@@ -266,7 +266,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
                     let mut pick = None;
                     let label = match current {
                         Some(RAW_DEFAULT) => crate::i18n::tr("Same as raw default").to_string(),
-                        None => crate::i18n::tr("LightCraft Default").to_string(),
+                        None => crate::i18n::tr("IA Darkroom Default").to_string(),
                         Some(pid) => app
                             .session
                             .presets
@@ -280,7 +280,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
                         if ui.selectable_label(current == Some(RAW_DEFAULT), crate::i18n::tr("Same as raw default")).clicked() {
                             pick = Some(json!({"camera": cam, "remove": true}));
                         }
-                        if ui.selectable_label(current.is_none(), crate::i18n::tr("LightCraft Default")).clicked() {
+                        if ui.selectable_label(current.is_none(), crate::i18n::tr("IA Darkroom Default")).clicked() {
                             pick = Some(json!({"camera": cam, "preset": null}));
                         }
                         if let Some(pid) = crate::panels::presets::picker_rows(ui, &id, &app.session.presets, current) {
@@ -394,7 +394,7 @@ fn import_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         }
     }
     if app.session.library.is_none() {
-        hint(ui, t, crate::i18n::tr("In-memory session: these settings last until LightCraft quits."));
+        hint(ui, t, crate::i18n::tr("In-memory session: these settings last until IA Darkroom quits."));
     }
 }
 
@@ -762,7 +762,7 @@ fn theme_card<V: PartialEq + Copy>(
         });
 }
 
-/// A small LightCraft window painted with `kind`'s tokens: the top bar with its search field, the
+/// A small IA Darkroom window painted with `kind`'s tokens: the top bar with its search field, the
 /// photo with the filmstrip under it, the Edit panel (histogram and sliders), the tool strip and
 /// the bottom bar.
 fn theme_preview(ui: &mut egui::Ui, kind: crate::theme::ThemeKind, width: f32) {

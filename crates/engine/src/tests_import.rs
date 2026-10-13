@@ -1236,7 +1236,7 @@ fn expand_stops_at_the_walk_limits() {
     let _ = std::fs::remove_dir_all(&d);
 }
 
-/// Raw containers LightCraft cannot decode but shows by their embedded JPEG are picked up from a folder
+/// Raw containers IA Darkroom cannot decode but shows by their embedded JPEG are picked up from a folder
 /// (the extensions are in `import::EXTENSIONS`; the files differ so none is a duplicate) and import as preview only.
 #[test]
 fn folder_import_picks_up_undecodable_raw_containers_as_preview_only() {
@@ -1558,7 +1558,7 @@ fn upper_and_mixed_case_extensions_are_found_by_import_browse_and_sidecar_lookup
     std::fs::write(src.join("b.Jpg"), jpeg(2)).unwrap();
     std::fs::write(src.join("c.JPEG"), jpeg(3)).unwrap();
     write_png(&src.join("d.PNG"), 4);
-    // a raw container LightCraft shows by its embedded JPEG (a TIFF whose IFD0 points at one)
+    // a raw container IA Darkroom shows by its embedded JPEG (a TIFF whose IFD0 points at one)
     let nef = {
         let j = jpeg(5);
         let off = 8 + 2 + 24 + 4;

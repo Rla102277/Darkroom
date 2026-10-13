@@ -1,4 +1,4 @@
-//! LightCraft's egui frontend: a Lightroom-style UI over `lightcraft-engine`.
+//! IA Darkroom's egui frontend: a Lightroom-style UI over `lightcraft-engine`.
 //!
 //! The UI is thin: every action goes through [`LightcraftApp::run`], which handles UI commands
 //! (views, panels, zoom — see [`menus::ui_commands`]) and forwards everything else to the engine.
@@ -685,7 +685,7 @@ impl LightcraftApp {
                 let t = ctx.input(|i| i.time);
                 self.ui.toast = Some((
                     crate::i18n::tr_format!(
-                        "{n} change{} saved in memory but not written to disk: {e} — LightCraft will retry",
+                        "{n} change{} saved in memory but not written to disk: {e} — IA Darkroom will retry",
                         if n == 1 { "" } else { "s" },
                         n = n,
                         e = e
@@ -1286,8 +1286,8 @@ impl LightcraftApp {
     /// "Darkroom: <library name>" (just "Darkroom" for a library that isn't saved).
     pub fn window_title(&self) -> String {
         match panels::settings::open_library_name(self) {
-            Some(name) => format!("Darkroom: {name}"),
-            None => "Darkroom".to_string(),
+            Some(name) => format!("IA Darkroom: {name}"),
+            None => "IA Darkroom".to_string(),
         }
     }
 

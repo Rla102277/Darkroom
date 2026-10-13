@@ -153,7 +153,7 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
             // saving is failing: the cloud icon turns into a warning until a save succeeds
             let unsaved = app.session.unsaved().map(|(n, e)| {
                 crate::i18n::tr_format!(
-                    "{n} change{} saved in memory but not written to disk: {e}\nLightCraft retries automatically; quitting now would lose {}.",
+                    "{n} change{} saved in memory but not written to disk: {e}\nIA Darkroom retries automatically; quitting now would lose {}.",
                     if n == 1 { "" } else { "s" },
                     if n == 1 { "it" } else { "them" },
                     e = e,

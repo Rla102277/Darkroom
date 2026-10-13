@@ -3,7 +3,7 @@
 use crate::exif::Tiff;
 use serde::{Deserialize, Serialize};
 
-/// Image container formats LightCraft recognises.
+/// Image container formats IA Darkroom recognises.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Format {
     Jpeg,

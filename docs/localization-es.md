@@ -1,4 +1,4 @@
-# LightCraft en español
+# IA Darkroom en español
 
 Elegir **Editar → Idioma → Español** o **Ajustes → General → Idioma**. El cambio se aplica al
 momento y se conserva para el próximo inicio (`language: "es"` en `ui.json`). `LIGHTCRAFT_LANGUAGE`
