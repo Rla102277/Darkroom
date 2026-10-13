@@ -490,6 +490,9 @@ pub enum KeywordingView {
 pub struct UiState {
     /// Shared panel arrangement; absent in legacy settings until their first layout.
     pub docking: Option<crate::docking::Workspace>,
+    /// IA Darkroom: the Print Sheet dialog's last choices (paper, size, strip…), kept with the UI.
+    #[serde(default)]
+    pub print_sheet: crate::print_dialog::PrintSheetOptions,
     #[serde(default = "crate::i18n::default_language")]
     pub language: crate::i18n::Locale,
     /// The Build Previews run last announced (its identity, finished?).
@@ -774,6 +777,10 @@ pub enum Dialog {
     ContactSheet {
         options: lightcraft_engine::contact_sheet::Options,
     },
+    /// IA Darkroom: File > Print Sheet… (the signature sheet through the native Epson driver).
+    PrintSheet {
+        opts: Box<crate::print_dialog::PrintSheetOptions>,
+    },
     /// `parent`: the folder to create it in (none: the top level). `include_selected`: the new album
     /// holds the selected photos (Lightroom's "Include selected photos"; folders hold none).
     NewAlbum {
@@ -1032,6 +1039,7 @@ impl Default for UiState {
     fn default() -> Self {
         UiState {
             docking: None,
+            print_sheet: Default::default(),
             language: crate::i18n::default_language(),
             preview_build_seen: None,
             unsaved_seen: false,

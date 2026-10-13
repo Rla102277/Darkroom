@@ -251,6 +251,7 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
         Dialog::PasteSettings { .. } => "Paste Selected Settings",
         Dialog::Export { .. } => "Export",
         Dialog::ContactSheet { .. } => "Contact Sheet PDF",
+        Dialog::PrintSheet { .. } => "Print Sheet",
         Dialog::Merge { opts } => opts.title(),
         Dialog::Settings { .. } => "Settings",
         Dialog::ConfirmDelete { .. } => "Delete Photos",
@@ -640,6 +641,7 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
                     );
                     group_checklist(ui, "pasteGroup", groups);
                 }
+                Dialog::PrintSheet { opts } => crate::print_dialog::draw(app, ui, opts),
                 Dialog::ContactSheet { options } => {
                     options.columns = options.columns.clamp(1, 8);
                     options.rows = options.rows.clamp(1, 10);
@@ -1229,6 +1231,8 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
                         add_label.as_str()
                     }
                     Dialog::ContactSheet { .. } => "Choose PDF…",
+                    Dialog::PrintSheet { opts } if opts.save_only => "Save TIFF",
+                    Dialog::PrintSheet { .. } => "Print",
                     Dialog::Merge { .. } => "Merge",
                     Dialog::DenoiseModel { info, .. } if info["download"].is_string() => "Accept & Download",
                     Dialog::DenoiseModel { .. } => "Install",
@@ -1302,6 +1306,7 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
                     Dialog::Import { .. }
                         | Dialog::Export { .. }
                         | Dialog::ContactSheet { .. }
+                        | Dialog::PrintSheet { .. }
                         | Dialog::NewAlbum { .. }
                         | Dialog::NewSmartAlbum { .. }
                         | Dialog::SmartRules { .. }
@@ -1691,6 +1696,17 @@ pub fn confirm_dialog(app: &mut LightcraftApp, dlg: &Dialog) -> Result<serde_jso
             }),
         ),
         Dialog::ContactSheet { options } => app.run("app.contactSheet", json!(options)),
+        Dialog::PrintSheet { opts } => {
+            let r = app.run("print.sheet", opts.params())?;
+            let file = r["file"].as_str().unwrap_or("").to_string();
+            let msg = match r["jobId"].as_str() {
+                Some(j) if !j.is_empty() => format!("Sent to the printer ({j}). The file is kept at {file}"),
+                _ => format!("Saved {file}"),
+            };
+            app.ui.print_sheet = (**opts).clone();
+            app.notices.push(msg);
+            Ok(r)
+        }
         Dialog::CopySettings { groups } => app.run("develop.copy", json!({"groups": groups})),
         Dialog::PasteSettings { groups } => app.run("develop.paste", json!({"groups": groups})),
         Dialog::Export { opts, full_size, resize, limit_kb, dir, .. } => {

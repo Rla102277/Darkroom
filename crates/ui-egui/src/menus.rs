@@ -164,6 +164,7 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     ("dialog.pasteSettings", "Paste Selected Settings…", Some("Cmd+Shift+V"), "Edit"),
     ("view.focusSearch", "Find…", Some("Cmd+F"), "Edit"),
     ("dialog.export", "Export…", None, "File"),
+    ("dialog.printSheet", "Print Sheet…", Some("Cmd+P"), "File"),
     ("dialog.contactSheet", "Contact Sheet PDF…", None, "File"),
     ("app.contactSheet", "Export Contact Sheet PDF", None, ""),
     ("photo.editInPhotoCraft", "Edit in PhotoCraft", Some("Cmd+Shift+E"), "Photo>Edit In"),
@@ -1199,6 +1200,12 @@ pub fn run_ui_command(app: &mut LightcraftApp, id: &str, p: &Value) -> Option<Re
             app.ui.dialog = Some(Dialog::CopySettings { groups });
             Ok(Value::Null)
         }
+        "dialog.printSheet" => {
+            let mut opts = app.ui.print_sheet.clone();
+            opts.load_papers(app);
+            app.ui.dialog = Some(Dialog::PrintSheet { opts: Box::new(opts) });
+            Ok(Value::Null)
+        }
         "dialog.contactSheet" => {
             app.ui.dialog = Some(Dialog::ContactSheet { options: lightcraft_engine::contact_sheet::Options::default() });
             Ok(Value::Null)
@@ -1848,6 +1855,7 @@ pub fn run_ui_command(app: &mut LightcraftApp, id: &str, p: &Value) -> Option<Re
 pub fn ui_enabled(app: &LightcraftApp, id: &str) -> bool {
     match id {
         "dialog.contactSheet" | "app.contactSheet" => !cfg!(target_arch = "wasm32") && app.session.active().is_some() && app.export.is_none(),
+        "dialog.printSheet" => cfg!(target_os = "macos") && app.session.active().is_some(),
         s if s.starts_with("panel.") || s.starts_with("tool.") || s.starts_with("section.") => app.session.active().is_some() || s == "panel.close",
         "app.export" | "dialog.export" | "dialog.createPreset" | "dialog.rename" | "dialog.captureTime" | "dialog.copySettings" => {
             app.session.active().is_some()
