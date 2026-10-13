@@ -252,6 +252,81 @@ fn link(s: &mut Session, p: &Value) -> Result<Value> {
     }))
 }
 
+
+/// The keyword families IA Darkroom writes back to Photos.
+pub const PICK_SELECT: &str = "Pick: Select";
+pub const PICK_NO: &str = "Pick: No";
+
+/// `photos.push`: catalog decisions back to Apple Photos for linked photos. Picks become
+/// favorites plus `Pick: Select`; rejects get `Pick: No` (never deleted, never hidden by this);
+/// the catalog's other keywords, title and caption go along. One photo at a time through the
+/// scripting interface, with a retry, so a bad one does not stop the rest.
+fn push(s: &mut Session, p: &Value) -> Result<Value> {
+    const C: &str = "photos.push";
+    let photos = client(s, C)?;
+    let with_favorites = p.get("favorites").and_then(Value::as_bool).unwrap_or(true);
+    let with_keywords = p.get("keywords").and_then(Value::as_bool).unwrap_or(true);
+    let with_text = p.get("titles").and_then(Value::as_bool).unwrap_or(true);
+    let targets = s.targets(p);
+    let mut not_linked = 0;
+    let mut fav_on = Vec::new();
+    let mut fav_off = Vec::new();
+    let mut changes = Vec::new();
+    for t in &targets {
+        let Some(stable) = s.photos_links.id_of(*t).map(str::to_string) else {
+            not_linked += 1;
+            continue;
+        };
+        let Some(ph) = s.catalog.photo(*t) else { continue };
+        let mut add = Vec::new();
+        let mut remove = Vec::new();
+        match ph.flag {
+            lightcraft_catalog::Flag::Pick => {
+                add.push(PICK_SELECT.to_string());
+                remove.push(PICK_NO.to_string());
+                fav_on.push(stable.clone());
+            }
+            lightcraft_catalog::Flag::Reject => {
+                add.push(PICK_NO.to_string());
+                remove.push(PICK_SELECT.to_string());
+                fav_off.push(stable.clone());
+            }
+            lightcraft_catalog::Flag::None => {}
+        }
+        if with_keywords {
+            for k in &ph.meta.keywords {
+                if k != LINK_KEYWORD && !k.starts_with("Pick: ") {
+                    add.push(k.replace('|', " > "));
+                }
+            }
+        }
+        let title = if with_text && !ph.meta.title.trim().is_empty() { Some(ph.meta.title.clone()) } else { None };
+        let description = if with_text && !ph.meta.caption.trim().is_empty() { Some(ph.meta.caption.clone()) } else { None };
+        if !add.is_empty() || !remove.is_empty() || title.is_some() || description.is_some() {
+            changes.push(darkroom_photos::KeywordChange { id: stable, add, remove, title, description });
+        }
+    }
+    let mut favorites_changed = 0;
+    if with_favorites {
+        if !fav_on.is_empty() {
+            favorites_changed += photos.set(&fav_on, Some(true), None).map_err(|e| bad(C, e.to_string()))?;
+        }
+        if !fav_off.is_empty() {
+            favorites_changed += photos.set(&fav_off, Some(false), None).map_err(|e| bad(C, e.to_string()))?;
+        }
+    }
+    let mut changed = 0u64;
+    let mut failed = Vec::new();
+    for chunk in changes.chunks(200) {
+        let v = photos.set_keywords(chunk).map_err(|e| bad(C, e.to_string()))?;
+        changed += v["changed"].as_u64().unwrap_or(0);
+        if let Some(f) = v["failed"].as_array() {
+            failed.extend(f.iter().cloned());
+        }
+    }
+    Ok(json!({"photos": targets.len(), "notLinked": not_linked, "favoritesChanged": favorites_changed, "keywordsChanged": changed, "failed": failed}))
+}
+
 pub fn specs() -> Vec<CommandSpec> {
     let mut v = vec![
         cmd!(query "photos.status", "Apple Photos Status", [], None,
@@ -307,6 +382,9 @@ pub fn specs() -> Vec<CommandSpec> {
         cmd!(query "photos.link", "Link from Apple Photos", ["File"], None,
             "{album?: Photos album id, ids?: [asset ids], albumName?: catalog album name (default \"Photos: <album title>\"), withKeywords?: true, hidden?: false} → {linked, fresh, alreadyInCatalog, already, skippedVideo, metadataSet, failed: [{id?, error}], album?: catalog album id} — fetches the originals into Darkroom's cache and adds them in place; Photos' keywords, title and caption are copied and favorites become picks. Nothing in Photos changes.",
             photos_enabled, link),
+        cmd!(query "photos.push", "Push Decisions to Apple Photos", ["File"], None,
+            "{ids?: catalog photo ids (default: the selection), favorites?: true, keywords?: true, titles?: true} → {photos, notLinked, favoritesChanged, keywordsChanged, failed} — picks become favorites plus the keyword Pick: Select, rejects get Pick: No, and the catalog's keywords, title and caption are written to the linked Photos items. Nothing is hidden or deleted.",
+            photos_enabled, push),
         cmd!(query "photos.set", "Set in Apple Photos", [], None,
             "{ids?: catalog photo ids (default: the selection), favorite?: bool, hidden?: bool} → {changed, requested, notLinked} — writes favorite / hidden state back to Photos for linked photos",
             photos_enabled, |s, p| {

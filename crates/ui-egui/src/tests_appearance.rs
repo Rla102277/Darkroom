@@ -131,12 +131,12 @@ fn auto_follows_the_system_and_falls_back_to_dark() {
     assert_eq!(ctx.theme(), egui::Theme::Light);
     *system.lock().unwrap() = Some(egui::Theme::Dark);
     frame(&mut a, &ctx);
-    assert_eq!(crate::theme::current(&ctx), Some(ThemeKind::Charcoal));
+    assert_eq!(crate::theme::current(&ctx), Some(ThemeKind::Darkroom));
     assert_eq!(ctx.theme(), egui::Theme::Dark);
     // no answer from the host or from egui: dark
     *system.lock().unwrap() = None;
     frame(&mut a, &ctx);
-    assert_eq!(crate::theme::current(&ctx), Some(ThemeKind::Charcoal));
+    assert_eq!(crate::theme::current(&ctx), Some(ThemeKind::Darkroom));
     // without a host service, egui's report is used
     let mut plain = app();
     plain.ui.settings.appearance_mode = AppearanceMode::Auto;
@@ -187,7 +187,7 @@ fn the_top_bar_button_and_settings_cards_drive_the_mode() {
     h.step();
     h.step();
     assert_eq!(h.app.ui.settings.appearance_mode, AppearanceMode::Dark);
-    assert_eq!(crate::theme::current(&h.view.ctx), Some(ThemeKind::Charcoal));
+    assert_eq!(crate::theme::current(&h.view.ctx), Some(ThemeKind::Darkroom));
 }
 
 #[test]
