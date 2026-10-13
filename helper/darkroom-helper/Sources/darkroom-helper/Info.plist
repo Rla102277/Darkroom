@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.theinfinitearch.darkroom.helper</string>
+	<key>CFBundleName</key>
+	<string>Darkroom Helper</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Darkroom reads your Photos library to browse, grade and print your pictures, and writes back favorites, hidden state and albums.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Darkroom asks Photos to read and set keywords, titles and captions, which PhotoKit cannot do.</string>
+</dict>
+</plist>

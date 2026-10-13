@@ -36,7 +36,7 @@ fn note_width(ui: &egui::Ui, w: f32) {
     });
 }
 
-fn row(
+pub(crate) fn row(
     app: &mut LightcraftApp,
     ui: &mut egui::Ui,
     id: &str,
@@ -487,7 +487,7 @@ fn header_button(section: SidebarSection) -> Option<HeaderButton> {
         SidebarSection::Keywords => {
             Some(HeaderButton { id: "keywordNew", icon: Icon::Plus, tooltip: "Create Keyword Tag", action: HeaderAction::Run(new_keyword) })
         }
-        SidebarSection::Local | SidebarSection::ByDate | SidebarSection::Folders => None,
+        SidebarSection::Local | SidebarSection::ByDate | SidebarSection::Folders | SidebarSection::ApplePhotos => None,
     }
 }
 
@@ -706,6 +706,10 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui) {
                     SidebarSection::Keywords => {
                         let tree = app.caches.keyword_tree(&app.session.catalog);
                         section(app, ui, s, tree.len(), |app, ui| keyword_rows(app, ui, &tree, 0.0))
+                    }
+                    SidebarSection::ApplePhotos => {
+                        let rows = app.apple_photos.top_level_rows();
+                        section(app, ui, s, rows, crate::apple_photos::rows)
                     }
                 };
                 placed.push(at);

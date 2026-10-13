@@ -1013,6 +1013,7 @@ impl crate::Session {
         #[cfg(target_os = "macos")]
         {
             self.apple_photos = Some(crate::apple_photos::osascript());
+            self.photos = darkroom_photos::Photos::system().ok();
         }
         self
     }

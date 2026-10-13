@@ -7,6 +7,7 @@
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
 pub mod album_picker;
+pub mod apple_photos;
 pub mod brush_live;
 pub mod control;
 pub mod credits;
@@ -270,6 +271,8 @@ impl QuitPrompt {
 
 pub struct LightcraftApp {
     pub(crate) model_setup: model_setup::Pending,
+    /// Darkroom: the Apple Photos sidebar section's state.
+    pub apple_photos: apple_photos::Panel,
     /// Per-catalog-revision caches of library-wide results the panels show every frame
     /// (expensive on big libraries).
     pub caches: Caches,
@@ -480,6 +483,7 @@ impl LightcraftApp {
             library_problem: None,
             activity_expanded: false,
             model_setup: Default::default(),
+            apple_photos: Default::default(),
         }
     }
 
@@ -1279,11 +1283,11 @@ impl LightcraftApp {
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(self.window_title()));
     }
 
-    /// "LightCraft — <library name>" (just "LightCraft" for a library that isn't saved).
+    /// "Darkroom: <library name>" (just "Darkroom" for a library that isn't saved).
     pub fn window_title(&self) -> String {
         match panels::settings::open_library_name(self) {
-            Some(name) => format!("LightCraft — {name}"),
-            None => "LightCraft".to_string(),
+            Some(name) => format!("Darkroom: {name}"),
+            None => "Darkroom".to_string(),
         }
     }
 

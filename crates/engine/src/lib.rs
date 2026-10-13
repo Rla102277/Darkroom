@@ -311,6 +311,12 @@ pub struct Session {
     /// (lightcraft-cli, a script) never ends in the middle of one.
     #[cfg(not(target_arch = "wasm32"))]
     pub apple_photos_background: bool,
+    /// Darkroom: Apple Photos through the Mac helper (`cmd/photos.rs`); installed by
+    /// [`Session::with_fs`] on macOS when the helper is built, `None` elsewhere. Tests put a fake
+    /// client here.
+    pub photos: Option<darkroom_photos::Photos>,
+    /// Darkroom: which catalog photos were linked from Apple Photos (`apple-photos.json`).
+    pub photos_links: cmd::photos::Links,
 }
 
 impl Default for Session {
@@ -398,6 +404,8 @@ impl Session {
             apple_photos_imports: Default::default(),
             #[cfg(not(target_arch = "wasm32"))]
             apple_photos_background: false,
+            photos: None,
+            photos_links: Default::default(),
         }
     }
 

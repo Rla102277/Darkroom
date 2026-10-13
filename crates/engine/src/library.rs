@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use crate::{EngineError, LibrarySource, Result, Selection, Session};
 
 /// Library directory name inside the user's Pictures folder.
-pub const DEFAULT_NAME: &str = "LightCraft Library";
+pub const DEFAULT_NAME: &str = "Darkroom Library";
 
 /// The library folder `path` names. A library is a folder; naming one of its own files
 /// (`catalog.snap`, `catalog.log`, `catalog.lock`) means the folder that holds it. Any other
@@ -440,6 +440,7 @@ impl Session {
         let mut settings = SettingsLoad::default();
         // preferences
         let prefs = settings.read::<PrefsFile>(files.as_mut(), "prefs.json").unwrap_or_default();
+        self.photos_links = settings.read::<crate::cmd::photos::Links>(files.as_mut(), crate::cmd::photos::Links::FILE).unwrap_or_default();
         self.xmp = prefs.xmp;
         self.last_export = prefs.last_export;
         self.export_presets = prefs.export_presets;
@@ -679,6 +680,12 @@ impl Session {
                 Err(e) => log::error!("library: view: {e}"),
             }
         }
+    }
+
+    /// Darkroom: write one of the library's own settings files (no-op without a library).
+    pub fn write_library_file(&mut self, name: &str, data: &[u8]) -> Result<()> {
+        let Some(lib) = self.library.as_mut() else { return Ok(()) };
+        lib.files.write_atomic(name, data).map_err(|e| EngineError::Other(format!("{name}: {e}")))
     }
 
     /// Save the library preferences (no-op for in-memory sessions).

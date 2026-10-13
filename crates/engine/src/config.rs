@@ -37,10 +37,10 @@ fn config_dir_with(platform: Platform, env: impl Fn(&str) -> Option<OsString>) -
         return (!dir.is_empty()).then(|| PathBuf::from(dir));
     }
     match platform {
-        Platform::Mac => env("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/LightCraft")),
-        Platform::Windows => env("APPDATA").map(|a| PathBuf::from(a).join("LightCraft")),
+        Platform::Mac => env("HOME").map(|h| PathBuf::from(h).join("Library/Application Support/Darkroom")),
+        Platform::Windows => env("APPDATA").map(|a| PathBuf::from(a).join("Darkroom")),
         Platform::Other => {
-            env("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| env("HOME").map(|h| PathBuf::from(h).join(".config"))).map(|c| c.join("lightcraft"))
+            env("XDG_CONFIG_HOME").map(PathBuf::from).or_else(|| env("HOME").map(|h| PathBuf::from(h).join(".config"))).map(|c| c.join("darkroom"))
         }
     }
 }

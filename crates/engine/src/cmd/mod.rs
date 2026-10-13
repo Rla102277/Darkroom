@@ -29,6 +29,7 @@ mod merge;
 pub mod metadata;
 pub mod missing;
 mod organize;
+pub mod photos;
 mod prefs;
 mod preset_files;
 pub mod previews;
@@ -166,6 +167,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(face_detect::specs());
         v.extend(face_recognize::specs());
         v.extend(activity::specs());
+        v.extend(photos::specs());
         v
     })
 }

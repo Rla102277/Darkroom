@@ -1,0 +1,15 @@
+[package]
+name = "darkroom-photos"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Darkroom: Apple Photos through the Mac helper (helper/darkroom-helper): albums, assets, originals, thumbnails, keywords, and the writes that sync back"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }

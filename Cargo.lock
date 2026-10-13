@@ -1195,6 +1195,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "darkroom-photos"
+version = "0.7.1"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3215,6 +3225,7 @@ name = "lightcraft-engine"
 version = "0.7.1"
 dependencies = [
  "ab_glyph",
+ "darkroom-photos",
  "harfrust",
  "jxl-oxide",
  "libc",
@@ -3478,6 +3489,7 @@ name = "lightcraft-ui-egui"
 version = "0.7.1"
 dependencies = [
  "craft-ui",
+ "darkroom-photos",
  "egui",
  "egui_kittest",
  "lightcraft-catalog",

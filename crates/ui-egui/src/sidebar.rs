@@ -16,12 +16,14 @@ pub enum SidebarSection {
     ByDate,
     Folders,
     Keywords,
+    /// Darkroom: the Apple Photos library's folders and albums, linked into the catalog by a click.
+    ApplePhotos,
 }
 
 impl SidebarSection {
     /// Every section, in the order a new library shows them.
-    pub const ALL: [SidebarSection; 5] =
-        [SidebarSection::Albums, SidebarSection::Local, SidebarSection::ByDate, SidebarSection::Folders, SidebarSection::Keywords];
+    pub const ALL: [SidebarSection; 6] =
+        [SidebarSection::ApplePhotos, SidebarSection::Albums, SidebarSection::Local, SidebarSection::ByDate, SidebarSection::Folders, SidebarSection::Keywords];
 
     /// The name commands, the saved UI state and widget ids (`sidebarSection:<id>`) use.
     pub const fn id(self) -> &'static str {
@@ -31,6 +33,7 @@ impl SidebarSection {
             SidebarSection::ByDate => "byDate",
             SidebarSection::Folders => "folders",
             SidebarSection::Keywords => "keywords",
+            SidebarSection::ApplePhotos => "applePhotos",
         }
     }
 
@@ -42,6 +45,7 @@ impl SidebarSection {
             SidebarSection::ByDate => "By Date",
             SidebarSection::Folders => "Folders",
             SidebarSection::Keywords => "Keywords",
+            SidebarSection::ApplePhotos => "Apple Photos",
         }
     }
 
@@ -53,6 +57,7 @@ impl SidebarSection {
             SidebarSection::ByDate => "No photos yet",
             SidebarSection::Folders => "No imported folders yet",
             SidebarSection::Keywords => "No keywords yet",
+            SidebarSection::ApplePhotos => "Build the Mac helper and allow Photos access",
         }
     }
 
@@ -62,7 +67,11 @@ impl SidebarSection {
 
     /// Whether this build has the section at all (Local browses folders on disk: not on the web).
     pub const fn available(self) -> bool {
-        !(cfg!(target_arch = "wasm32") && matches!(self, SidebarSection::Local))
+        match self {
+            SidebarSection::Local => !cfg!(target_arch = "wasm32"),
+            SidebarSection::ApplePhotos => cfg!(target_os = "macos"),
+            _ => true,
+        }
     }
 
     /// The ids of every section, for error messages (`albums|local|…`).
