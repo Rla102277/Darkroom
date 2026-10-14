@@ -280,7 +280,7 @@ impl SidebarLayout {
 
 #[cfg(test)]
 mod tests {
-    use super::SidebarSection::{Albums, ByDate, Folders, Keywords, Local};
+    use super::SidebarSection::{Albums, ApplePhotos, ByDate, Folders, Keywords, Local};
     use super::*;
     use serde_json::json;
 
@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn a_new_sidebar_shows_every_section_open_in_the_usual_order() {
         let layout = SidebarLayout::default();
-        assert_eq!(order(&layout), [Albums, Local, ByDate, Folders, Keywords]);
+        assert_eq!(order(&layout), [ApplePhotos, Albums, Local, ByDate, Folders, Keywords]);
         assert!(layout.sections().iter().all(|s| !s.hidden && !s.collapsed));
         assert!(layout.is_default());
     }
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn an_arrangement_survives_saving() {
         let mut layout = SidebarLayout::default();
-        layout.move_before(Keywords, Some(Albums));
+        layout.move_before(Keywords, Some(ApplePhotos));
         layout.set_hidden(Local, true);
         layout.set_collapsed(ByDate, true);
         let saved = serde_json::to_value(&layout).unwrap();
@@ -327,7 +327,7 @@ mod tests {
             null,
             {"id": "albums", "hidden": "yes", "collapsed": 1}
         ]));
-        assert_eq!(order(&layout), [Keywords, Folders, Albums, Local, ByDate]);
+        assert_eq!(order(&layout), [Keywords, Folders, Albums, ApplePhotos, Local, ByDate]);
         assert!(layout.is_collapsed(Keywords) && !layout.is_hidden(Keywords), "the first entry for a section counts");
         assert!(!layout.is_hidden(Albums) && !layout.is_collapsed(Albums), "a flag that isn't true or false is off");
     }
@@ -370,14 +370,14 @@ mod tests {
     fn a_section_moves_above_another_or_to_the_end() {
         let mut layout = SidebarLayout::default();
         assert!(layout.move_before(Keywords, Some(Local)));
-        assert_eq!(order(&layout), [Albums, Keywords, Local, ByDate, Folders]);
+        assert_eq!(order(&layout), [ApplePhotos, Albums, Keywords, Local, ByDate, Folders]);
         assert!(layout.move_before(Albums, None));
-        assert_eq!(order(&layout), [Keywords, Local, ByDate, Folders, Albums]);
+        assert_eq!(order(&layout), [ApplePhotos, Keywords, Local, ByDate, Folders, Albums]);
         // nothing to do: above itself, where it already is
         assert!(!layout.move_before(Local, Some(Local)));
         assert!(!layout.move_before(Local, Some(ByDate)));
         assert!(!layout.move_before(Albums, None));
-        assert_eq!(order(&layout), [Keywords, Local, ByDate, Folders, Albums]);
+        assert_eq!(order(&layout), [ApplePhotos, Keywords, Local, ByDate, Folders, Albums]);
     }
 
     /// Given a hidden section between two shown ones, when the upper one is dropped right where
@@ -391,7 +391,7 @@ mod tests {
         assert_eq!(layout, was);
         // a hidden section can still be put elsewhere (it shows there when it is shown again)
         assert!(layout.move_before(Local, None));
-        assert_eq!(order(&layout), [Albums, ByDate, Folders, Keywords, Local]);
+        assert_eq!(order(&layout), [ApplePhotos, Albums, ByDate, Folders, Keywords, Local]);
     }
 
     /// Moving a section keeps whether it is hidden or folded.
@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn an_arrangement_that_is_asked_for_is_read_strictly() {
         let layout = SidebarLayout::parse(&json!(["keywords", {"id": "albums", "hidden": true, "collapsed": null}])).unwrap();
-        assert_eq!(order(&layout), [Keywords, Albums, Local, ByDate, Folders]);
+        assert_eq!(order(&layout), [Keywords, Albums, ApplePhotos, Local, ByDate, Folders]);
         assert!(layout.is_hidden(Albums) && !layout.is_collapsed(Albums));
         assert!(SidebarLayout::parse(&json!([])).unwrap().is_default());
         for (asked, says) in [
@@ -459,6 +459,6 @@ mod tests {
             assert_eq!(serde_json::to_value(s).unwrap(), json!(s.id()));
         }
         assert_eq!(SidebarSection::from_id("Albums"), None);
-        assert_eq!(SidebarSection::ids(), "albums|local|byDate|folders|keywords");
+        assert_eq!(SidebarSection::ids(), "applePhotos|albums|local|byDate|folders|keywords");
     }
 }

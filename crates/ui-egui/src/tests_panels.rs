@@ -417,7 +417,7 @@ fn a_new_album_brings_a_hidden_albums_section_back() {
 fn sidebar_commands_refuse_what_they_cannot_read() {
     let mut h = demo([1400.0, 900.0], json!({"view": "photoGrid", "leftPanel": true}));
     for (params, says) in [
-        (json!({}), "`section` is needed (albums|local|byDate|folders|keywords)"),
+        (json!({}), "`section` is needed (applePhotos|albums|local|byDate|folders|keywords)"),
         (json!({"section": 3}), "`section` is needed"),
         (json!({"section": "map"}), "unknown section `map`"),
         (json!({"section": "albums", "show": "no"}), "`show` must be true or false"),
