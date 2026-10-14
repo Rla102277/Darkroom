@@ -25,7 +25,7 @@ use super::{CommandSpec, always, bad, cmd, str_param};
 use crate::{Result, Session};
 
 /// Photos measured per helper call, and how often a long scan saves what it has.
-const MEASURE_CHUNK: usize = 48;
+const MEASURE_CHUNK: usize = 200;
 const SAVE_EVERY: usize = 1500;
 /// Keyword writes per helper call (Photos' scripting interface does one photo at a time).
 const WRITE_CHUNK: usize = 25;

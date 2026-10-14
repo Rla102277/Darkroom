@@ -101,7 +101,8 @@ pub fn device_from_filename(name: &str) -> &'static str {
 pub fn build(store: &Store, rules: &Rules) -> Report {
     let mut r = Report { scanned: store.scanned.clone(), notes: store.notes.clone(), ..Default::default() };
     let memberships = store.memberships();
-    let mut hashes: HashMap<(u64, u32, u32), usize> = HashMap::new();
+    // exact duplicates as the stacks job finds them: same hash and size, same brightness and focus
+    let mut hashes: HashMap<(u64, u32, u32, i32, i32), usize> = HashMap::new();
     for p in store.photos.values() {
         r.total += 1;
         match p.media.as_str() {
@@ -131,8 +132,9 @@ pub fn build(store: &Store, rules: &Rules) -> Report {
                     r.blur += 1;
                 }
             }
-            if let Some(h) = m.hash().filter(|_| m.lap_var >= 2.0) {
-                *hashes.entry((h, p.width, p.height)).or_default() += 1;
+            if let Some(h) = m.hash().filter(|h| m.lap_var >= 2.0 && m.black < 0.9 && m.white < 0.9 && *h != 0 && *h != u64::MAX) {
+                let q = |v: f32| (v * 500.0).round() as i32;
+                *hashes.entry((h, p.width, p.height, q(m.mean), q(m.sharp))).or_default() += 1;
             }
         }
         if p.screenshot {
