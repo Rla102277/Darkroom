@@ -325,8 +325,11 @@ pub fn tick(app: &mut LightcraftApp, ctx: &egui::Context) {
 pub fn rows(app: &mut LightcraftApp, ui: &mut Ui) {
     // first look: the cached tree at once, then a fresh read behind it
     if app.apple_photos.albums.is_none() && app.apple_photos.error.is_none() && !app.apple_photos.is_loading() {
-        app.apple_photos.load_cached();
         let photos = app.session.photos.clone();
+        // the cached tree is the helper's last answer: without a helper there is nothing to refresh it
+        if photos.is_some() {
+            app.apple_photos.load_cached();
+        }
         app.apple_photos.refresh(photos);
     }
     app.apple_photos.poll();

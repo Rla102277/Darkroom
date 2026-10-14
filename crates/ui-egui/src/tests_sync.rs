@@ -64,7 +64,8 @@ fn changed_folder(dir: &Scratch) -> Headless {
     write_png(&dir.path("trip/c.png"), 3);
     std::fs::remove_file(dir.path("trip/b.png")).unwrap();
     let app = LightcraftApp::new(session, Services { png: None, ..Default::default() });
-    let mut h = Headless::new(app, [1400.0, 900.0], 1.0);
+    // (tall enough for the folder rows: on a Mac, Apple Photos is above them)
+    let mut h = Headless::new(app, [1400.0, 1050.0], 1.0);
     let r = h.request("ui.set", json!({"view": "photoGrid", "leftPanel": true}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);

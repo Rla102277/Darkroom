@@ -173,7 +173,8 @@ fn a_narrow_window_shrinks_the_panels_without_forgetting_their_width() {
 /// is part of the saved UI state.
 #[test]
 fn sidebar_sections_collapse_and_remember_it() {
-    let mut h = demo([1400.0, 900.0], json!({"view": "photoGrid", "leftPanel": true}));
+    // (tall enough for Keywords at the bottom: on a Mac, Apple Photos is above the others)
+    let mut h = demo([1400.0, 1050.0], json!({"view": "photoGrid", "leftPanel": true}));
     let has = |h: &Headless, id: &str| h.app.widgets.iter().any(|(w, _)| w == id);
     let click = |h: &mut Headless, id: &str| {
         let r = h.request("ui.clickWidget", json!({"id": id}), T);
@@ -1804,8 +1805,8 @@ fn removing_a_disk_from_the_library_asks_first() {
 #[test]
 fn a_deep_chain_keeps_its_nesting_and_the_sidebar_scrolls_sideways() {
     let deep = "/a/b/c/d/e/f/g/h/i/j/k/l/m";
-    // (tall enough for the whole chain: Recently Deleted is above it now)
-    let mut h = folders_app_sized(&[&format!("{deep}/x/1.jpg"), &format!("{deep}/y/2.jpg")], [1400.0, 1000.0]);
+    // (tall enough for the whole chain: Recently Deleted and, on a Mac, Apple Photos are above it now)
+    let mut h = folders_app_sized(&[&format!("{deep}/x/1.jpg"), &format!("{deep}/y/2.jpg")], [1400.0, 1150.0]);
     let mut xs: Vec<f32> = Vec::new();
     let mut path = String::new();
     for name in deep.split('/').filter(|n| !n.is_empty()) {
@@ -1900,8 +1901,8 @@ fn a_long_name_alone_does_not_make_the_sidebar_scroll() {
 #[test]
 fn the_selection_bar_stays_inside_the_panel() {
     let deep = "/a/b/c/d/e/f/g/h/i/j/k/l/m";
-    // (tall enough for the whole chain: Recently Deleted is above it now)
-    let mut h = folders_app_sized(&[&format!("{deep}/x/1.jpg"), &format!("{deep}/y/2.jpg")], [1400.0, 1000.0]);
+    // (tall enough for the whole chain: Recently Deleted and, on a Mac, Apple Photos are above it now)
+    let mut h = folders_app_sized(&[&format!("{deep}/x/1.jpg"), &format!("{deep}/y/2.jpg")], [1400.0, 1150.0]);
     click(&mut h, "source:libfolder:/a/b/c/d/e/f/g/h/i/j/k/l");
     let panel = widget(&h, "panel:left_panel");
     let bar = widget(&h, "highlight:libfolder:/a/b/c/d/e/f/g/h/i/j/k/l");

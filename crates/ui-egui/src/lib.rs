@@ -417,6 +417,12 @@ impl LightcraftApp {
     pub fn new(mut session: Session, services: Services) -> Self {
         // AI mask requests run on the model's worker; frames apply their results (never wait)
         session.segmenter.background = true;
+        // Darkroom: unit tests never reach the Apple Photos library of the Mac they run on (the
+        // helper built in this repo would be found next to the test binary)
+        #[cfg(test)]
+        {
+            session.photos = None;
+        }
         Self {
             session,
             ui: UiState::default(),

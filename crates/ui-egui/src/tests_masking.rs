@@ -916,6 +916,8 @@ fn local_folder_listed_twice_opens_and_closes_each_row() {
     std::fs::create_dir_all(inner.join("Sub")).unwrap();
     let mut h = detail("panel.edit");
     exec(&mut h, "view.leftPanel", json!({"show": true}));
+    // (tall enough for both copies: on a Mac, Apple Photos is above Local)
+    h.request("ui.resize", json!({"width": 1200.0, "height": 1000.0}), T);
     h.hide_home_above(&base);
     let (base_s, inner_s) = (base.to_string_lossy().to_string(), inner.to_string_lossy().to_string());
     let sub = inner.join("Sub").to_string_lossy().to_string();
