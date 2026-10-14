@@ -1,4 +1,10 @@
-# LightCraft — instructions for agents
+# IA Darkroom (a LightCraft fork): instructions for agents
+
+**This repo is IA Darkroom, Randy Archambault's private photo app. Read `HANDOFF.md` first:** the
+hard rules, the Mac, what works, what is unverified, what is next. The rest of this file is the
+upstream LightCraft guide; its engineering rules (never crash, no unsafe, assets, testing) still
+apply, but `plan/` and the parity docs it mentions are upstream's priorities, not ours.
+
 
 LightCraft is a clean-room, open-source, pure-Rust photo library + non-destructive raw developer targeting Adobe Lightroom parity (and beyond). Native on macOS, Windows, Linux; web via WASM. Sibling of `../pdfcraft` (Acrobat), `../photocraft` (Photoshop), `../vectorcraft` (Illustrator) and `../filmcraft` (Premiere), with the same conventions.
 
