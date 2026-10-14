@@ -11,5 +11,9 @@
        prompt shows NSAppleEventsUsageDescription from Info.plist. -->
   <key>com.apple.security.automation.apple-events</key>
   <true/>
+  <!-- IA Darkroom: the helper reads and writes the Photos library through PhotoKit. Under the
+       hardened runtime TCC denies that silently (no prompt) unless this entitlement is present. -->
+  <key>com.apple.security.personal-information.photos-library</key>
+  <true/>
 </dict>
 </plist>
