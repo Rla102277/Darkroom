@@ -1,0 +1,975 @@
+{
+ "v2_0": {
+  "both_installers_valid": true,
+  "payload_assets_identical": true,
+  "keepers": [
+   "presence",
+   "witness",
+   "400h (tweaked)"
+  ],
+  "new": [
+   "capelight",
+   "fortia",
+   "ultra"
+  ],
+  "rebuilt": [
+   "zone"
+  ],
+  "carried_from_v1_6": [
+   "natura",
+   "americannegative"
+  ],
+  "min_pairwise_color_distance": 0.154,
+  "camera_verified": false,
+  "metrics": {
+   "capelight": {
+    "black": [
+     0.0253,
+     0.0259,
+     0.0283
+    ],
+    "white": [
+     1.0,
+     0.9732,
+     0.9462
+    ],
+    "neutralY": [
+     0.026,
+     0.256,
+     0.38,
+     0.492,
+     0.597,
+     0.698,
+     0.796,
+     0.891,
+     0.977
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0829
+   },
+   "witness": {
+    "black": [
+     0.0031,
+     0.0031,
+     0.0031
+    ],
+    "white": [
+     0.9682,
+     0.9682,
+     0.9682
+    ],
+    "neutralY": [
+     0.003,
+     0.099,
+     0.191,
+     0.29,
+     0.406,
+     0.541,
+     0.686,
+     0.83,
+     0.968
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0073
+   },
+   "zone": {
+    "black": [
+     0.0043,
+     0.0043,
+     0.0043
+    ],
+    "white": [
+     0.9978,
+     0.9978,
+     0.9978
+    ],
+    "neutralY": [
+     0.004,
+     0.162,
+     0.279,
+     0.392,
+     0.506,
+     0.623,
+     0.745,
+     0.871,
+     0.998
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0261
+   },
+   "presence": {
+    "black": [
+     0.0171,
+     0.0138,
+     0.0083
+    ],
+    "white": [
+     0.9546,
+     0.9617,
+     0.9636
+    ],
+    "neutralY": [
+     0.014,
+     0.152,
+     0.252,
+     0.359,
+     0.474,
+     0.598,
+     0.724,
+     0.845,
+     0.96
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0793
+   },
+   "fortia": {
+    "black": [
+     0.0031,
+     0.0031,
+     0.0032
+    ],
+    "white": [
+     0.9938,
+     0.9937,
+     0.9938
+    ],
+    "neutralY": [
+     0.003,
+     0.095,
+     0.197,
+     0.307,
+     0.426,
+     0.557,
+     0.696,
+     0.838,
+     0.994
+    ],
+    "monotone": true,
+    "max_second_difference": 0.147
+   },
+   "americannegative": {
+    "black": [
+     0.0109,
+     0.0091,
+     0.0076
+    ],
+    "white": [
+     0.9707,
+     0.9794,
+     0.9804
+    ],
+    "neutralY": [
+     0.009,
+     0.162,
+     0.276,
+     0.394,
+     0.514,
+     0.633,
+     0.751,
+     0.867,
+     0.978
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1395
+   },
+   "400h": {
+    "black": [
+     0.0053,
+     0.0052,
+     0.0054
+    ],
+    "white": [
+     0.9845,
+     0.9653,
+     0.9514
+    ],
+    "neutralY": [
+     0.005,
+     0.197,
+     0.322,
+     0.441,
+     0.554,
+     0.663,
+     0.768,
+     0.87,
+     0.968
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1097
+   },
+   "natura": {
+    "black": [
+     0.0177,
+     0.0154,
+     0.0128
+    ],
+    "white": [
+     0.9833,
+     1.0,
+     0.9693
+    ],
+    "neutralY": [
+     0.016,
+     0.14,
+     0.235,
+     0.337,
+     0.452,
+     0.582,
+     0.719,
+     0.859,
+     0.994
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1228
+   },
+   "ultra": {
+    "black": [
+     0.0052,
+     0.0051,
+     0.0049
+    ],
+    "white": [
+     0.982,
+     0.9518,
+     0.9258
+    ],
+    "neutralY": [
+     0.005,
+     0.175,
+     0.3,
+     0.421,
+     0.536,
+     0.646,
+     0.753,
+     0.856,
+     0.956
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1438
+   }
+  },
+  "names": {
+   "1001": "IA Threshold",
+   "1002": "IA Witness",
+   "1003": "IA Vault",
+   "1004": "IA Presence",
+   "1005": "IA Ember",
+   "1006": "IA Passage",
+   "1007": "IA Kin",
+   "1008": "IA Sanctuary",
+   "1009": "IA Afterglow"
+  }
+ },
+ "v2_1": {
+  "order": {
+   "1001": "IA Invitation",
+   "1002": "IA Witness",
+   "1003": "IA Vault",
+   "1004": "IA Presence",
+   "1005": "IA Threshold",
+   "1006": "IA Ember",
+   "1007": "IA Sanctuary",
+   "1008": "IA Kin",
+   "1009": "IA Afterglow"
+  },
+  "swap": "Passage out, Invitation in (anchored to 103 Acros/Ilford scans)",
+  "both_installers_valid": true,
+  "camera_verified": false
+ },
+ "v2_2": {
+  "both_installers_valid": true,
+  "payload_assets_identical": true,
+  "changes": [
+   "mid-slope S-curve pass on all nine (phase 1 of docs/PLAN_v2.2_contrast.md)",
+   "Presence C: Lomography daylight anchor, cyan-leaning blue held, shoulder 0.40",
+   "Sanctuary re-separated from Presence C: greener mids, cooler bleaching whites, greens toward cyan"
+  ],
+  "mid_slope_targets": {
+   "invitation": 1.05,
+   "witness": 1.25,
+   "vault": 1.3,
+   "presence": 1.12,
+   "threshold": 1.05,
+   "ember": 1.35,
+   "sanctuary": 1.15,
+   "kin": 1.08,
+   "afterglow": 1.1
+  },
+  "mid_slope_measured": {
+   "invitation": 1.05,
+   "witness": 1.25,
+   "vault": 1.3,
+   "presence": 1.12,
+   "threshold": 1.05,
+   "ember": 1.35,
+   "sanctuary": 1.15,
+   "kin": 1.08,
+   "afterglow": 1.1
+  },
+  "v21_mid_slope": {
+   "invitation": 0.79,
+   "witness": 1.0,
+   "vault": 0.93,
+   "presence": 0.93,
+   "threshold": 0.83,
+   "ember": 1.0,
+   "sanctuary": 0.98,
+   "kin": 0.89,
+   "afterglow": 0.77
+  },
+  "pairwise_color_distance": {
+   "presence/threshold": 0.312,
+   "presence/ember": 0.276,
+   "presence/sanctuary": 0.157,
+   "presence/kin": 0.201,
+   "presence/afterglow": 0.299,
+   "threshold/ember": 0.498,
+   "threshold/sanctuary": 0.362,
+   "threshold/kin": 0.16,
+   "threshold/afterglow": 0.222,
+   "ember/sanctuary": 0.227,
+   "ember/kin": 0.406,
+   "ember/afterglow": 0.392,
+   "sanctuary/kin": 0.285,
+   "sanctuary/afterglow": 0.278,
+   "kin/afterglow": 0.259
+  },
+  "min_pairwise_color_distance": 0.157,
+  "camera_verified": false,
+  "metrics": {
+   "invitation": {
+    "black": [
+     0.0817,
+     0.0817,
+     0.0817
+    ],
+    "white": [
+     0.98,
+     0.98,
+     0.98
+    ],
+    "neutralY": [
+     0.082,
+     0.244,
+     0.341,
+     0.462,
+     0.601,
+     0.73,
+     0.832,
+     0.91,
+     0.98
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0586,
+    "slope_toe": 0.94,
+    "slope_mid": 1.05,
+    "slope_shoulder": 0.59
+   },
+   "witness": {
+    "black": [
+     0.002,
+     0.002,
+     0.002
+    ],
+    "white": [
+     0.9697,
+     0.9697,
+     0.9697
+    ],
+    "neutralY": [
+     0.002,
+     0.079,
+     0.156,
+     0.257,
+     0.406,
+     0.582,
+     0.725,
+     0.844,
+     0.97
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0072,
+    "slope_toe": 0.61,
+    "slope_mid": 1.25,
+    "slope_shoulder": 0.97
+   },
+   "vault": {
+    "black": [
+     0.0033,
+     0.0033,
+     0.0033
+    ],
+    "white": [
+     0.9985,
+     0.9985,
+     0.9985
+    ],
+    "neutralY": [
+     0.003,
+     0.129,
+     0.218,
+     0.339,
+     0.506,
+     0.677,
+     0.803,
+     0.897,
+     0.999
+    ],
+    "monotone": true,
+    "max_second_difference": 0.025,
+    "slope_toe": 0.81,
+    "slope_mid": 1.3,
+    "slope_shoulder": 0.77
+   },
+   "presence": {
+    "black": [
+     0.015,
+     0.012,
+     0.0071
+    ],
+    "white": [
+     0.9381,
+     0.9237,
+     0.9034
+    ],
+    "neutralY": [
+     0.012,
+     0.132,
+     0.218,
+     0.324,
+     0.462,
+     0.612,
+     0.737,
+     0.835,
+     0.925
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0904,
+    "slope_toe": 0.77,
+    "slope_mid": 1.12,
+    "slope_shoulder": 0.75
+   },
+   "threshold": {
+    "black": [
+     0.0242,
+     0.0247,
+     0.0271
+    ],
+    "white": [
+     1.0,
+     0.9783,
+     0.9511
+    ],
+    "neutralY": [
+     0.025,
+     0.228,
+     0.335,
+     0.458,
+     0.597,
+     0.727,
+     0.83,
+     0.912,
+     0.981
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0807,
+    "slope_toe": 1.12,
+    "slope_mid": 1.05,
+    "slope_shoulder": 0.61
+   },
+   "ember": {
+    "black": [
+     0.0017,
+     0.0017,
+     0.0018
+    ],
+    "white": [
+     0.9944,
+     0.9944,
+     0.9944
+    ],
+    "neutralY": [
+     0.002,
+     0.071,
+     0.149,
+     0.259,
+     0.426,
+     0.612,
+     0.751,
+     0.859,
+     0.994
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1493,
+    "slope_toe": 0.58,
+    "slope_mid": 1.35,
+    "slope_shoulder": 0.95
+   },
+   "sanctuary": {
+    "black": [
+     0.0158,
+     0.0135,
+     0.0111
+    ],
+    "white": [
+     0.9671,
+     1.0,
+     0.9765
+    ],
+    "neutralY": [
+     0.014,
+     0.124,
+     0.209,
+     0.313,
+     0.452,
+     0.609,
+     0.746,
+     0.869,
+     0.991
+    ],
+    "monotone": true,
+    "max_second_difference": 0.121,
+    "slope_toe": 0.74,
+    "slope_mid": 1.15,
+    "slope_shoulder": 0.98
+   },
+   "kin": {
+    "black": [
+     0.0049,
+     0.0048,
+     0.005
+    ],
+    "white": [
+     0.9887,
+     0.9694,
+     0.9554
+    ],
+    "neutralY": [
+     0.005,
+     0.178,
+     0.288,
+     0.413,
+     0.554,
+     0.688,
+     0.798,
+     0.887,
+     0.973
+    ],
+    "monotone": true,
+    "max_second_difference": 0.101,
+    "slope_toe": 1.05,
+    "slope_mid": 1.08,
+    "slope_shoulder": 0.69
+   },
+   "afterglow": {
+    "black": [
+     0.0369,
+     0.0419,
+     0.0444
+    ],
+    "white": [
+     0.9859,
+     0.9695,
+     0.9558
+    ],
+    "neutralY": [
+     0.041,
+     0.233,
+     0.335,
+     0.469,
+     0.619,
+     0.751,
+     0.848,
+     0.917,
+     0.972
+    ],
+    "monotone": true,
+    "max_second_difference": 0.148,
+    "slope_toe": 1.05,
+    "slope_mid": 1.1,
+    "slope_shoulder": 0.49
+   }
+  }
+ },
+ "v2_3": {
+  "both_installers_valid": true,
+  "payload_assets_identical": true,
+  "picks": {
+   "ember": "ember_K",
+   "invitation": "B warm silver",
+   "witness": "A neutral",
+   "vault": "B orange filter + selenium"
+  },
+  "changes": [
+   "pivot-power S pass on all six color Looks (toe below mid above shoulder)",
+   "Ember = Ember K, Kodachrome-leaning (Ektachrome 64 + E100VS + Ektar 25 stand-in, hue work by hand)",
+   "Invitation warm-silver tone, Vault orange filter + selenium tone on a Zone scale, Witness neutral",
+   "installers set camera JPEG Sharpness +1 (PTP 0x5015 = 4) after install",
+   "probe/ folder: per-Look adjustments confirmed built-in only (0xA801); intensity settable via 0x903F"
+  ],
+  "color_slopes": {
+   "presence": {
+    "toe": 0.71,
+    "mid": 1.22,
+    "shoulder": 0.69
+   },
+   "threshold": {
+    "toe": 0.95,
+    "mid": 1.16,
+    "shoulder": 0.67
+   },
+   "ember_K": {
+    "toe": 0.55,
+    "mid": 1.42,
+    "shoulder": 0.9
+   },
+   "sanctuary": {
+    "toe": 0.69,
+    "mid": 1.25,
+    "shoulder": 0.92
+   },
+   "kin": {
+    "toe": 0.91,
+    "mid": 1.24,
+    "shoulder": 0.66
+   },
+   "afterglow": {
+    "toe": 0.89,
+    "mid": 1.22,
+    "shoulder": 0.56
+   }
+  },
+  "bw": {
+   "invitation_B": {
+    "zones": [
+     0.081,
+     0.118,
+     0.173,
+     0.224,
+     0.284,
+     0.386,
+     0.544,
+     0.725,
+     0.865,
+     0.935,
+     0.98
+    ],
+    "slope_toe": 0.94,
+    "slope_mid": 1.05,
+    "slope_sh": 0.59,
+    "tint_mid": [
+     0.004,
+     0.01
+    ]
+   },
+   "witness_A": {
+    "zones": [
+     0.002,
+     0.015,
+     0.034,
+     0.064,
+     0.112,
+     0.193,
+     0.342,
+     0.575,
+     0.773,
+     0.888,
+     0.97
+    ],
+    "slope_toe": 0.61,
+    "slope_mid": 1.25,
+    "slope_sh": 0.97,
+    "tint_mid": [
+     0.0,
+     -0.0
+    ]
+   },
+   "vault_B": {
+    "zones": [
+     0.003,
+     0.03,
+     0.071,
+     0.116,
+     0.173,
+     0.269,
+     0.445,
+     0.679,
+     0.848,
+     0.933,
+     0.996
+    ],
+    "slope_toe": 0.83,
+    "slope_mid": 1.3,
+    "slope_sh": 0.73,
+    "tint_mid": [
+     0.002,
+     -0.007
+    ]
+   }
+  },
+  "pairwise_color_distance": {
+   "presence/threshold": 0.27,
+   "presence/ember": 0.226,
+   "presence/sanctuary": 0.157,
+   "presence/kin": 0.179,
+   "presence/afterglow": 0.246,
+   "threshold/ember": 0.389,
+   "threshold/sanctuary": 0.323,
+   "threshold/kin": 0.169,
+   "threshold/afterglow": 0.226,
+   "ember/sanctuary": 0.163,
+   "ember/kin": 0.347,
+   "ember/afterglow": 0.256,
+   "sanctuary/kin": 0.271,
+   "sanctuary/afterglow": 0.23,
+   "kin/afterglow": 0.265
+  },
+  "min_pairwise_color_distance": 0.157,
+  "camera_verified": false,
+  "metrics": {
+   "invitation": {
+    "black": [
+     0.0935,
+     0.0791,
+     0.0644
+    ],
+    "white": [
+     0.9875,
+     0.9785,
+     0.9693
+    ],
+    "neutralY": [
+     0.081,
+     0.243,
+     0.34,
+     0.461,
+     0.6,
+     0.73,
+     0.832,
+     0.91,
+     0.98
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0609,
+    "source": "out23bw/invitation_B"
+   },
+   "witness": {
+    "black": [
+     0.002,
+     0.002,
+     0.002
+    ],
+    "white": [
+     0.9697,
+     0.9697,
+     0.9697
+    ],
+    "neutralY": [
+     0.002,
+     0.079,
+     0.156,
+     0.257,
+     0.406,
+     0.582,
+     0.725,
+     0.844,
+     0.97
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0072,
+    "source": "out23bw/witness_A"
+   },
+   "vault": {
+    "black": [
+     0.0027,
+     0.002,
+     0.0086
+    ],
+    "white": [
+     0.9955,
+     0.9954,
+     0.9979
+    ],
+    "neutralY": [
+     0.003,
+     0.134,
+     0.225,
+     0.348,
+     0.515,
+     0.686,
+     0.811,
+     0.9,
+     0.996
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0443,
+    "source": "out23bw/vault_B"
+   },
+   "presence": {
+    "black": [
+     0.0138,
+     0.0111,
+     0.0066
+    ],
+    "white": [
+     0.941,
+     0.9265,
+     0.9061
+    ],
+    "neutralY": [
+     0.011,
+     0.122,
+     0.202,
+     0.31,
+     0.462,
+     0.627,
+     0.754,
+     0.844,
+     0.928
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0926,
+    "source": "out23c/presence"
+   },
+   "threshold": {
+    "black": [
+     0.0248,
+     0.0253,
+     0.0277
+    ],
+    "white": [
+     1.0,
+     0.9756,
+     0.9485
+    ],
+    "neutralY": [
+     0.025,
+     0.148,
+     0.269,
+     0.413,
+     0.597,
+     0.712,
+     0.812,
+     0.901,
+     0.979
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0529,
+    "source": "out23c/threshold"
+   },
+   "ember": {
+    "black": [
+     0.0015,
+     0.0015,
+     0.0015
+    ],
+    "white": [
+     0.9945,
+     0.9945,
+     0.9946
+    ],
+    "neutralY": [
+     0.001,
+     0.069,
+     0.142,
+     0.252,
+     0.428,
+     0.626,
+     0.764,
+     0.865,
+     0.995
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1226,
+    "source": "out23c/ember_K"
+   },
+   "sanctuary": {
+    "black": [
+     0.0145,
+     0.0124,
+     0.0102
+    ],
+    "white": [
+     0.9674,
+     1.0,
+     0.9768
+    ],
+    "neutralY": [
+     0.013,
+     0.114,
+     0.194,
+     0.3,
+     0.452,
+     0.624,
+     0.762,
+     0.875,
+     0.991
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1234,
+    "source": "out23c/sanctuary"
+   },
+   "kin": {
+    "black": [
+     0.0048,
+     0.0047,
+     0.0049
+    ],
+    "white": [
+     0.99,
+     0.9707,
+     0.9566
+    ],
+    "neutralY": [
+     0.005,
+     0.136,
+     0.242,
+     0.375,
+     0.554,
+     0.696,
+     0.807,
+     0.893,
+     0.974
+    ],
+    "monotone": true,
+    "max_second_difference": 0.0879,
+    "source": "out23c/kin"
+   },
+   "afterglow": {
+    "black": [
+     0.0377,
+     0.0429,
+     0.0454
+    ],
+    "white": [
+     0.9794,
+     0.9631,
+     0.9495
+    ],
+    "neutralY": [
+     0.042,
+     0.153,
+     0.27,
+     0.417,
+     0.619,
+     0.734,
+     0.826,
+     0.901,
+     0.966
+    ],
+    "monotone": true,
+    "max_second_difference": 0.1444,
+    "source": "out23c/afterglow"
+   }
+  }
+ },
+ "v2_3_1": {
+  "both_installers_valid": true,
+  "payload_assets_identical": true,
+  "changes": [
+   "icons rebuilt in the Leica two-line convention, inverted code on B&W"
+  ],
+  "cubes": "identical to v2.3",
+  "camera_verified": "cubes verified at ISO 400 2026-09-30; icons not yet seen on camera"
+ }
+}
