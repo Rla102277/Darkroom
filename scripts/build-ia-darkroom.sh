@@ -13,6 +13,10 @@ cd "$ROOT"
 INSTALL=1
 [ "${1:-}" = "--no-install" ] && INSTALL=0
 
+# Rust from rustup, whether or not the calling shell has it on PATH.
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+command -v cargo >/dev/null || { echo "cargo not found: install Rust with  curl https://sh.rustup.rs -sSf | sh"; exit 1; }
+
 VERSION="$(awk '/^\[/ { in_pkg = ($0 == "[workspace.package]") ; next } in_pkg && $1 == "version" { gsub(/[" ]/, "", $3); print $3; exit }' Cargo.toml)"
 SHA="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 APP_NAME="IA Darkroom"
