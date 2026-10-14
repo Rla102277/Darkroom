@@ -614,9 +614,12 @@ fn open_session(in_memory: bool, dir: Option<std::path::PathBuf>, seed_demo: boo
     s.face_models_dir = lightcraft_engine::config::default_face_models_dir();
     // Darkroom: the bundled Infinite Arch Looks go into every library's Profile browser once
     if problem.is_none() {
+        // older copies first (the v1.2 group that installed itself on every launch), then the bundle
+        let names: Vec<String> = s.lut_profiles.iter().filter(|l| l.name.starts_with("IA ")).map(|l| l.name.clone()).collect();
+        let removed = lightcraft_engine::cmd::looks::remove_duplicates(&mut s, &names, "Infinite Arch Looks");
         let n = lightcraft_engine::cmd::looks::install_bundled(&mut s).len();
-        if n > 0 {
-            log::info!("looks: {n} bundled group(s) installed");
+        if n > 0 || removed > 0 {
+            log::info!("looks: {n} bundled group(s) installed, {removed} duplicate(s) removed");
         }
     }
     // Control requests are answered on the UI thread: Add to Apple Photos must not wait there
