@@ -78,6 +78,16 @@ Advanced B&W Photo with every one of the driver's B&W controls. Native Epson dri
 AirPrint queue is refused. The same thing from the terminal is `print.sheet`; see PRINT-PROOF.md
 for the proof targets and the driver option names.
 
+## Camera local tone mapping, for every raw
+
+LightCraft renders Apple ProRAW's per-region gain map when the Profile section's "Camera local
+tone mapping" is on. IA Darkroom extends that to every raw with an embedded camera JPEG: the
+global camera look is fitted to the JPEG as before, and what the look cannot explain at low
+spatial frequency (Fuji D-Range Priority, Leica's rendering, Sony DRO, Canon ALO, Nikon ADL) is
+measured and stored as a gain map of the same shape (`crates/engine/src/camera_local_tone.rs`:
+16 × 12 cells, 17 brightness points each). Off is the plain raw, as Lightroom Classic shows it;
+on is what the camera showed. The option is per photo and part of the develop settings.
+
 ## Write-back to Photos
 
 File > Push Decisions to Apple Photos: picks become favorites plus the keyword `Pick: Select`,

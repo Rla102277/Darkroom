@@ -340,7 +340,7 @@ const FIT_PREVIEW_MAX_PIXELS: u64 = 128_000_000;
 /// Same-size proxies of the sensor (white-balanced, baseline exposure, through `transform`'s
 /// matrix: the generic camera ≈ sRGB model) and of the file's embedded camera JPEG (linear Rec.2020),
 /// and per proxy pixel whether any sensor sample it covers is clipped.
-fn proxies(raw: &RawImage, bytes: &[u8], transform: &CameraTransform, size: usize) -> Option<(Rgb32f, Rgb32f, Vec<bool>)> {
+pub(crate) fn proxies(raw: &RawImage, bytes: &[u8], transform: &CameraTransform, size: usize) -> Option<(Rgb32f, Rgb32f, Vec<bool>)> {
     let edge = (2 * size).max(384) as u32;
     let decoded = crate::files::decode_raw_preview(
         bytes,
@@ -580,7 +580,7 @@ const MIN_IMPROVEMENT: f64 = 0.7;
 /// cannot follow): visibly better renders that 0.055 rejected.
 const MAX_HOLDOUT_RMS: f64 = 0.10;
 
-fn luma(p: [f64; 3]) -> f64 {
+pub(crate) fn luma(p: [f64; 3]) -> f64 {
     p[0] * 0.2627 + p[1] * 0.6780 + p[2] * 0.0593
 }
 
