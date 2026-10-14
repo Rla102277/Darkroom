@@ -110,7 +110,6 @@ impl Panel {
     }
 }
 
-
 /// What the link worker reports.
 enum LinkEvent {
     /// The album's asset rows, in order.

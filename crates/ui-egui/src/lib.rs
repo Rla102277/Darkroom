@@ -8,7 +8,6 @@
 
 pub mod album_picker;
 pub mod apple_photos;
-pub mod print_dialog;
 pub mod brush_live;
 pub mod control;
 pub mod credits;
@@ -28,6 +27,7 @@ pub mod merge;
 mod model_setup;
 pub mod panels;
 pub mod pick;
+pub mod print_dialog;
 pub mod region;
 pub mod render;
 pub mod shortcuts;

@@ -75,35 +75,296 @@ pub struct Paper {
 /// The papers Randy stocks, plus the Epson and Red River media the driver lists, so a new paper
 /// is one line here.
 pub const PAPERS: &[Paper] = &[
-    Paper { id: "ultrapro-luster", name: "Red River UltraPro Luster 300", media: "1925", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "UltraPro Luster", matte: false },
-    Paper { id: "big-bend-baryta", name: "Red River Big Bend Baryta 310", media: "1916", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Big Bend Baryta", matte: false },
-    Paper { id: "polar-gloss-metallic", name: "Red River Polar Gloss Metallic 255", media: "1918", feed: Feed::Top, overcoat: true, gloss_smoothing: true, profile_hint: "Polar Gloss Metallic", matte: false },
-    Paper { id: "polar-luster-metallic", name: "Red River Polar Luster Metallic", media: "1923", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Polar Luster Metallic", matte: false },
-    Paper { id: "palo-duro-baryta", name: "Red River Palo Duro Baryta v2", media: "1926", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Palo Duro Baryta", matte: false },
-    Paper { id: "palo-duro-satin", name: "Red River Palo Duro Satin", media: "1927", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Palo Duro Satin", matte: false },
-    Paper { id: "palo-duro-softgloss-rag", name: "Red River Palo Duro Softgloss Rag 315", media: "1924", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Palo Duro Softgloss", matte: false },
-    Paper { id: "palo-duro-etching", name: "Red River Palo Duro Etching", media: "1901", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Palo Duro Etching", matte: true },
-    Paper { id: "aurora-white", name: "Red River Aurora White 300", media: "1900", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Aurora White", matte: true },
-    Paper { id: "trinity-river-velvet", name: "Red River Trinity River Velvet 315", media: "1907", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Trinity River Velvet", matte: true },
-    Paper { id: "river-linen", name: "Red River River Linen", media: "1909", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "River Linen", matte: true },
-    Paper { id: "polar-matte", name: "Red River Polar Matte 60lb", media: "1915", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Polar Matte", matte: true },
-    Paper { id: "ultrapro-satin", name: "Red River UltraPro Satin", media: "1928", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "UltraPro Satin", matte: false },
-    Paper { id: "ultrapro-gloss", name: "Red River UltraPro Gloss", media: "1921", feed: Feed::Top, overcoat: true, gloss_smoothing: true, profile_hint: "UltraPro Gloss", matte: false },
-    Paper { id: "epson-premium-luster", name: "Epson Premium Luster Photo Paper", media: "27", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Premium Luster", matte: false },
-    Paper { id: "epson-premium-glossy", name: "Epson Premium Glossy", media: "13", feed: Feed::Top, overcoat: true, gloss_smoothing: true, profile_hint: "Premium Glossy", matte: false },
-    Paper { id: "epson-legacy-baryta", name: "Epson Legacy Baryta", media: "157", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Legacy Baryta", matte: false },
-    Paper { id: "epson-legacy-platine", name: "Epson Legacy Platine", media: "1910", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Legacy Platine", matte: false },
-    Paper { id: "epson-legacy-fibre", name: "Epson Legacy Fibre", media: "1905", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Legacy Fibre", matte: true },
-    Paper { id: "epson-exhibition-fiber", name: "Epson Exhibition Fiber", media: "1914", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Exhibition Fiber", matte: false },
-    Paper { id: "epson-hot-press-bright", name: "Epson Hot Press Bright", media: "1912", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Hot Press Bright", matte: true },
-    Paper { id: "epson-cold-press-bright", name: "Epson Cold Press Bright", media: "1908", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Cold Press Bright", matte: true },
-    Paper { id: "epson-velvet-fine-art", name: "Epson Velvet Fine Art Paper", media: "53", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Velvet Fine Art", matte: true },
-    Paper { id: "epson-ultrasmooth", name: "Epson UltraSmooth Fine Art Paper", media: "88", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "UltraSmooth", matte: true },
-    Paper { id: "epson-archival-matte", name: "Epson Archival Matte Paper", media: "14", feed: Feed::Top, overcoat: false, gloss_smoothing: false, profile_hint: "Archival Matte", matte: true },
-    Paper { id: "epson-metallic-gloss", name: "Epson Metallic Photo Gloss", media: "1903", feed: Feed::Top, overcoat: true, gloss_smoothing: true, profile_hint: "Metallic Photo Paper Glossy", matte: false },
-    Paper { id: "epson-metallic-luster", name: "Epson Metallic Photo Luster", media: "1904", feed: Feed::Top, overcoat: true, gloss_smoothing: false, profile_hint: "Metallic Photo Paper Luster", matte: false },
-    Paper { id: "canvas-satin", name: "Epson Canvas Satin", media: "153", feed: Feed::FrontThick, overcoat: false, gloss_smoothing: false, profile_hint: "Canvas Satin", matte: false },
-    Paper { id: "canvas-matte", name: "Epson Canvas Matte", media: "155", feed: Feed::FrontThick, overcoat: false, gloss_smoothing: false, profile_hint: "Canvas Matte", matte: true },
+    Paper {
+        id: "ultrapro-luster",
+        name: "Red River UltraPro Luster 300",
+        media: "1925",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "UltraPro Luster",
+        matte: false,
+    },
+    Paper {
+        id: "big-bend-baryta",
+        name: "Red River Big Bend Baryta 310",
+        media: "1916",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Big Bend Baryta",
+        matte: false,
+    },
+    Paper {
+        id: "polar-gloss-metallic",
+        name: "Red River Polar Gloss Metallic 255",
+        media: "1918",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: true,
+        profile_hint: "Polar Gloss Metallic",
+        matte: false,
+    },
+    Paper {
+        id: "polar-luster-metallic",
+        name: "Red River Polar Luster Metallic",
+        media: "1923",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Polar Luster Metallic",
+        matte: false,
+    },
+    Paper {
+        id: "palo-duro-baryta",
+        name: "Red River Palo Duro Baryta v2",
+        media: "1926",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Palo Duro Baryta",
+        matte: false,
+    },
+    Paper {
+        id: "palo-duro-satin",
+        name: "Red River Palo Duro Satin",
+        media: "1927",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Palo Duro Satin",
+        matte: false,
+    },
+    Paper {
+        id: "palo-duro-softgloss-rag",
+        name: "Red River Palo Duro Softgloss Rag 315",
+        media: "1924",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Palo Duro Softgloss",
+        matte: false,
+    },
+    Paper {
+        id: "palo-duro-etching",
+        name: "Red River Palo Duro Etching",
+        media: "1901",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Palo Duro Etching",
+        matte: true,
+    },
+    Paper {
+        id: "aurora-white",
+        name: "Red River Aurora White 300",
+        media: "1900",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Aurora White",
+        matte: true,
+    },
+    Paper {
+        id: "trinity-river-velvet",
+        name: "Red River Trinity River Velvet 315",
+        media: "1907",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Trinity River Velvet",
+        matte: true,
+    },
+    Paper {
+        id: "river-linen",
+        name: "Red River River Linen",
+        media: "1909",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "River Linen",
+        matte: true,
+    },
+    Paper {
+        id: "polar-matte",
+        name: "Red River Polar Matte 60lb",
+        media: "1915",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Polar Matte",
+        matte: true,
+    },
+    Paper {
+        id: "ultrapro-satin",
+        name: "Red River UltraPro Satin",
+        media: "1928",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "UltraPro Satin",
+        matte: false,
+    },
+    Paper {
+        id: "ultrapro-gloss",
+        name: "Red River UltraPro Gloss",
+        media: "1921",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: true,
+        profile_hint: "UltraPro Gloss",
+        matte: false,
+    },
+    Paper {
+        id: "epson-premium-luster",
+        name: "Epson Premium Luster Photo Paper",
+        media: "27",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Premium Luster",
+        matte: false,
+    },
+    Paper {
+        id: "epson-premium-glossy",
+        name: "Epson Premium Glossy",
+        media: "13",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: true,
+        profile_hint: "Premium Glossy",
+        matte: false,
+    },
+    Paper {
+        id: "epson-legacy-baryta",
+        name: "Epson Legacy Baryta",
+        media: "157",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Legacy Baryta",
+        matte: false,
+    },
+    Paper {
+        id: "epson-legacy-platine",
+        name: "Epson Legacy Platine",
+        media: "1910",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Legacy Platine",
+        matte: false,
+    },
+    Paper {
+        id: "epson-legacy-fibre",
+        name: "Epson Legacy Fibre",
+        media: "1905",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Legacy Fibre",
+        matte: true,
+    },
+    Paper {
+        id: "epson-exhibition-fiber",
+        name: "Epson Exhibition Fiber",
+        media: "1914",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Exhibition Fiber",
+        matte: false,
+    },
+    Paper {
+        id: "epson-hot-press-bright",
+        name: "Epson Hot Press Bright",
+        media: "1912",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Hot Press Bright",
+        matte: true,
+    },
+    Paper {
+        id: "epson-cold-press-bright",
+        name: "Epson Cold Press Bright",
+        media: "1908",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Cold Press Bright",
+        matte: true,
+    },
+    Paper {
+        id: "epson-velvet-fine-art",
+        name: "Epson Velvet Fine Art Paper",
+        media: "53",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Velvet Fine Art",
+        matte: true,
+    },
+    Paper {
+        id: "epson-ultrasmooth",
+        name: "Epson UltraSmooth Fine Art Paper",
+        media: "88",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "UltraSmooth",
+        matte: true,
+    },
+    Paper {
+        id: "epson-archival-matte",
+        name: "Epson Archival Matte Paper",
+        media: "14",
+        feed: Feed::Top,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Archival Matte",
+        matte: true,
+    },
+    Paper {
+        id: "epson-metallic-gloss",
+        name: "Epson Metallic Photo Gloss",
+        media: "1903",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: true,
+        profile_hint: "Metallic Photo Paper Glossy",
+        matte: false,
+    },
+    Paper {
+        id: "epson-metallic-luster",
+        name: "Epson Metallic Photo Luster",
+        media: "1904",
+        feed: Feed::Top,
+        overcoat: true,
+        gloss_smoothing: false,
+        profile_hint: "Metallic Photo Paper Luster",
+        matte: false,
+    },
+    Paper {
+        id: "canvas-satin",
+        name: "Epson Canvas Satin",
+        media: "153",
+        feed: Feed::FrontThick,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Canvas Satin",
+        matte: false,
+    },
+    Paper {
+        id: "canvas-matte",
+        name: "Epson Canvas Matte",
+        media: "155",
+        feed: Feed::FrontThick,
+        overcoat: false,
+        gloss_smoothing: false,
+        profile_hint: "Canvas Matte",
+        matte: true,
+    },
 ];
 
 pub fn paper(id: &str) -> Option<&'static Paper> {
@@ -141,7 +402,10 @@ pub enum Size {
     SixteenByTwenty,
     SeventeenByTwentyTwo,
     /// Width and height in inches: `PageSize=Custom.WxH` in points.
-    Custom { width_in: f32, height_in: f32 },
+    Custom {
+        width_in: f32,
+        height_in: f32,
+    },
 }
 
 impl Size {
@@ -181,7 +445,9 @@ impl Size {
             Size::TwelveByTwelve => (Some("96"), "12x12".into()),
             Size::SixteenByTwenty => (Some("93"), "16x20".into()),
             Size::SeventeenByTwentyTwo => (Some("37"), "17x22".into()),
-            Size::Custom { width_in, height_in } => (None, format!("Custom.{}x{}", (width_in * 72.0).round() as u32, (height_in * 72.0).round() as u32)),
+            Size::Custom { width_in, height_in } => {
+                (None, format!("Custom.{}x{}", (width_in * 72.0).round() as u32, (height_in * 72.0).round() as u32))
+            }
         }
     }
 
@@ -300,7 +566,8 @@ pub struct Job {
 
 /// The driver options for a job, as `lp -o key=value` pairs. Errors name the unknown paper.
 pub fn options(job: &Job) -> Result<BTreeMap<String, String>, String> {
-    let paper = paper(&job.paper).ok_or_else(|| format!("unknown paper `{}` (one of {})", job.paper, PAPERS.iter().map(|p| p.id).collect::<Vec<_>>().join(", ")))?;
+    let paper = paper(&job.paper)
+        .ok_or_else(|| format!("unknown paper `{}` (one of {})", job.paper, PAPERS.iter().map(|p| p.id).collect::<Vec<_>>().join(", ")))?;
     let mut o = BTreeMap::new();
     // media and feed
     o.insert("EPIJ_Medi".into(), paper.media.into());
@@ -375,7 +642,9 @@ pub fn find_profile(paper: &Paper, installed: &[(std::path::PathBuf, String)]) -
     let mut candidates: Vec<&(std::path::PathBuf, String)> = installed
         .iter()
         .filter(|(p, n)| {
-            let hay = format!("{} {}", n, p.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default()).to_ascii_lowercase().replace(' ', "");
+            let hay = format!("{} {}", n, p.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default())
+                .to_ascii_lowercase()
+                .replace(' ', "");
             hay.contains(&hint) && (hay.contains("p900") || hay.contains("sc-p900") || hay.contains("scp900"))
         })
         .collect();
@@ -389,7 +658,16 @@ mod tests {
 
     #[test]
     fn color_jobs_turn_the_drivers_color_off() {
-        let o = options(&Job { paper: "ultrapro-luster".into(), size: Size::Letter, quality: Quality::Max, abw: None, borderless: false, roll_width_in: None, banner: false }).unwrap();
+        let o = options(&Job {
+            paper: "ultrapro-luster".into(),
+            size: Size::Letter,
+            quality: Quality::Max,
+            abw: None,
+            borderless: false,
+            roll_width_in: None,
+            banner: false,
+        })
+        .unwrap();
         assert_eq!(o["EPIJ_Medi"], "1925");
         assert_eq!(o["EPIJ_CMat"], "3");
         assert_eq!(o["ColorModel"], "RGB");
@@ -403,8 +681,24 @@ mod tests {
 
     #[test]
     fn abw_jobs_send_every_bw_control() {
-        let abw = Abw { toning: "warm".into(), tone: "normal".into(), contrast: 5, max_optical_density: -10, highlight_point_shift: "on".into(), ..Default::default() };
-        let o = options(&Job { paper: "big-bend-baryta".into(), size: Size::A3Plus, quality: Quality::High, abw: Some(abw), borderless: false, roll_width_in: None, banner: false }).unwrap();
+        let abw = Abw {
+            toning: "warm".into(),
+            tone: "normal".into(),
+            contrast: 5,
+            max_optical_density: -10,
+            highlight_point_shift: "on".into(),
+            ..Default::default()
+        };
+        let o = options(&Job {
+            paper: "big-bend-baryta".into(),
+            size: Size::A3Plus,
+            quality: Quality::High,
+            abw: Some(abw),
+            borderless: false,
+            roll_width_in: None,
+            banner: false,
+        })
+        .unwrap();
         assert_eq!(o["EPIJ_Ink_"], "3");
         assert_eq!(o["ColorModel"], "ABWP");
         assert_eq!(o["EPIJ_ClTn"], "2");
@@ -418,12 +712,32 @@ mod tests {
 
     #[test]
     fn rolls_and_custom_sizes() {
-        let o = options(&Job { paper: "ultrapro-luster".into(), size: Size::Custom { width_in: 17.0, height_in: 46.0 }, quality: Quality::Max, abw: None, borderless: false, roll_width_in: Some(17), banner: false }).unwrap();
+        let o = options(&Job {
+            paper: "ultrapro-luster".into(),
+            size: Size::Custom { width_in: 17.0, height_in: 46.0 },
+            quality: Quality::Max,
+            abw: None,
+            borderless: false,
+            roll_width_in: Some(17),
+            banner: false,
+        })
+        .unwrap();
         assert_eq!(o["EPIJ_PSrc"], "49");
         assert_eq!(o["EPIJ_RoWd"], "17");
         assert_eq!(o["EPIJ_CutS"], "1");
         assert_eq!(o["PageSize"], "Custom.1224x3312");
-        assert!(options(&Job { paper: "nope".into(), size: Size::Letter, quality: Quality::Max, abw: None, borderless: false, roll_width_in: None, banner: false }).is_err());
+        assert!(
+            options(&Job {
+                paper: "nope".into(),
+                size: Size::Letter,
+                quality: Quality::Max,
+                abw: None,
+                borderless: false,
+                roll_width_in: None,
+                banner: false
+            })
+            .is_err()
+        );
         assert_eq!(Size::parse("13x19"), Some(Size::A3Plus));
         assert_eq!(Size::parse("17 x 46").map(|s| s.inches()), Some((17.0, 46.0)));
     }

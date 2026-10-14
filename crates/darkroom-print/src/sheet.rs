@@ -223,7 +223,8 @@ mod tests {
         assert_eq!(at(0, 0), u16::MAX);
         assert_eq!(at(p.x + 5, p.y + 5), 1000);
         // something dark was drawn in the strip near its left edge
-        let strip: Vec<u16> = (p.strip_top..p.strip_top + p.strip_h).flat_map(|y| (p.x..p.x + 600).map(move |x| (x, y))).map(|(x, y)| at(x, y)).collect();
+        let strip: Vec<u16> =
+            (p.strip_top..p.strip_top + p.strip_h).flat_map(|y| (p.x..p.x + 600).map(move |x| (x, y))).map(|(x, y)| at(x, y)).collect();
         assert!(strip.iter().any(|v| *v < 50000), "caption not drawn");
     }
 }

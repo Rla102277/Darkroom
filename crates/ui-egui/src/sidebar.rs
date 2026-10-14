@@ -22,8 +22,14 @@ pub enum SidebarSection {
 
 impl SidebarSection {
     /// Every section, in the order a new library shows them.
-    pub const ALL: [SidebarSection; 6] =
-        [SidebarSection::ApplePhotos, SidebarSection::Albums, SidebarSection::Local, SidebarSection::ByDate, SidebarSection::Folders, SidebarSection::Keywords];
+    pub const ALL: [SidebarSection; 6] = [
+        SidebarSection::ApplePhotos,
+        SidebarSection::Albums,
+        SidebarSection::Local,
+        SidebarSection::ByDate,
+        SidebarSection::Folders,
+        SidebarSection::Keywords,
+    ];
 
     /// The name commands, the saved UI state and widget ids (`sidebarSection:<id>`) use.
     pub const fn id(self) -> &'static str {

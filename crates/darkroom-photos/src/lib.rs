@@ -334,7 +334,8 @@ impl Photos {
     fn call(&self, command: &str, params: Value, timeout: Duration) -> Result<Value> {
         let args = vec![command.to_string(), params.to_string()];
         let out = (self.runner)(&args, timeout)?;
-        let v: Value = serde_json::from_str(out.trim()).map_err(|e| Error::Protocol(format!("{e}: {}", out.chars().take(200).collect::<String>())))?;
+        let v: Value =
+            serde_json::from_str(out.trim()).map_err(|e| Error::Protocol(format!("{e}: {}", out.chars().take(200).collect::<String>())))?;
         if let Some(e) = v.get("error").and_then(Value::as_str) {
             return Err(Error::Helper(e.to_string()));
         }
@@ -464,7 +465,11 @@ impl Photos {
 
     /// Hands a prepared file to the queue with driver options. Refused for AirPrint queues.
     pub fn print_submit(&self, queue: &str, file: &Path, title: &str, copies: u32, options: &Value) -> Result<Value> {
-        self.call("print.submit", json!({"queue": queue, "file": file.to_string_lossy(), "title": title, "copies": copies, "options": options}), QUICK)
+        self.call(
+            "print.submit",
+            json!({"queue": queue, "file": file.to_string_lossy(), "title": title, "copies": copies, "options": options}),
+            QUICK,
+        )
     }
 
     pub fn print_jobs(&self, queue: Option<&str>) -> Result<Value> {
@@ -527,11 +532,12 @@ mod tests {
             Ok(json!({"items": items, "total": 4500, "offset": offset}))
         }));
         let mut seen = 0;
-        let total = p.all_assets(None, false, |page| {
-            seen += page.items.len();
-            true
-        })
-        .unwrap();
+        let total = p
+            .all_assets(None, false, |page| {
+                seen += page.items.len();
+                true
+            })
+            .unwrap();
         assert_eq!((seen, total), (4500, 4500));
     }
 }

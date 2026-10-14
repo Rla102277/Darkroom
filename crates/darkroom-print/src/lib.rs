@@ -206,7 +206,9 @@ pub fn to_profile_from(img: &Image16, source: &[u8], profile: &[u8], intent: Int
         },
         ..TransformOptions::default()
     };
-    let t = src.create_transform_16bit(Layout::Rgb, &dev, Layout::Rgb, opts).map_err(|e| Error::Profile(format!("can't convert to this profile: {e:?}")))?;
+    let t = src
+        .create_transform_16bit(Layout::Rgb, &dev, Layout::Rgb, opts)
+        .map_err(|e| Error::Profile(format!("can't convert to this profile: {e:?}")))?;
     let mut out = vec![0u16; img.rgb.len()];
     t.transform(&img.rgb, &mut out).map_err(|e| Error::Profile(format!("conversion failed: {e:?}")))?;
     Ok(Image16 { width: img.width, height: img.height, rgb: out })

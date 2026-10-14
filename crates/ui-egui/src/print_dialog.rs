@@ -133,7 +133,12 @@ pub fn draw(app: &mut LightcraftApp, ui: &mut Ui, o: &mut PrintSheetOptions) {
         o.load_papers(app);
     }
     let n = app.session.targets(&json!({})).len();
-    let name = app.session.active().and_then(|id| app.session.catalog.photo(id)).map(|p| if p.meta.title.trim().is_empty() { p.file_name.clone() } else { p.meta.title.clone() }).unwrap_or_default();
+    let name = app
+        .session
+        .active()
+        .and_then(|id| app.session.catalog.photo(id))
+        .map(|p| if p.meta.title.trim().is_empty() { p.file_name.clone() } else { p.meta.title.clone() })
+        .unwrap_or_default();
     ui.label(egui::RichText::new(if n > 1 { format!("{name} (first of {n} selected)") } else { name }).color(t.text_dim));
     ui.add_space(6.0);
 
@@ -182,24 +187,42 @@ pub fn draw(app: &mut LightcraftApp, ui: &mut Ui, o: &mut PrintSheetOptions) {
                     ui.selectable_value(&mut o.tone, v.into(), v);
                 }
             });
-            label_row(ui, "Brightness", |ui| { ui.add(egui::Slider::new(&mut o.brightness, -25..=25)); });
-            label_row(ui, "Contrast", |ui| { ui.add(egui::Slider::new(&mut o.contrast, -25..=25)); });
-            label_row(ui, "Shadow tonality", |ui| { ui.add(egui::Slider::new(&mut o.shadow_tonality, -25..=25)); });
-            label_row(ui, "Highlight tonality", |ui| { ui.add(egui::Slider::new(&mut o.highlight_tonality, -25..=25)); });
-            label_row(ui, "Max optical density", |ui| { ui.add(egui::Slider::new(&mut o.max_optical_density, -50..=0)); });
+            label_row(ui, "Brightness", |ui| {
+                ui.add(egui::Slider::new(&mut o.brightness, -25..=25));
+            });
+            label_row(ui, "Contrast", |ui| {
+                ui.add(egui::Slider::new(&mut o.contrast, -25..=25));
+            });
+            label_row(ui, "Shadow tonality", |ui| {
+                ui.add(egui::Slider::new(&mut o.shadow_tonality, -25..=25));
+            });
+            label_row(ui, "Highlight tonality", |ui| {
+                ui.add(egui::Slider::new(&mut o.highlight_tonality, -25..=25));
+            });
+            label_row(ui, "Max optical density", |ui| {
+                ui.add(egui::Slider::new(&mut o.max_optical_density, -50..=0));
+            });
         });
     }
     ui.add_space(6.0);
     ui.checkbox(&mut o.signature, "Signature strip under the image");
     if o.signature {
         ui.indent("sig", |ui| {
-            label_row(ui, "Caption", |ui| { ui.add(egui::TextEdit::singleline(&mut o.caption).desired_width(320.0)); });
-            label_row(ui, "Margins (in)", |ui| { ui.add(egui::DragValue::new(&mut o.margin_in).range(0.0..=3.0).speed(0.05)); });
-            label_row(ui, "Strip (in)", |ui| { ui.add(egui::DragValue::new(&mut o.strip_in).range(0.1..=2.0).speed(0.05)); });
+            label_row(ui, "Caption", |ui| {
+                ui.add(egui::TextEdit::singleline(&mut o.caption).desired_width(320.0));
+            });
+            label_row(ui, "Margins (in)", |ui| {
+                ui.add(egui::DragValue::new(&mut o.margin_in).range(0.0..=3.0).speed(0.05));
+            });
+            label_row(ui, "Strip (in)", |ui| {
+                ui.add(egui::DragValue::new(&mut o.strip_in).range(0.1..=2.0).speed(0.05));
+            });
         });
     } else {
         ui.indent("plain", |ui| {
-            label_row(ui, "Margins (in)", |ui| { ui.add(egui::DragValue::new(&mut o.margin_in).range(0.0..=3.0).speed(0.05)); });
+            label_row(ui, "Margins (in)", |ui| {
+                ui.add(egui::DragValue::new(&mut o.margin_in).range(0.0..=3.0).speed(0.05));
+            });
         });
     }
     label_row(ui, "Resolution", |ui| {
@@ -207,7 +230,9 @@ pub fn draw(app: &mut LightcraftApp, ui: &mut Ui, o: &mut PrintSheetOptions) {
             ui.selectable_value(&mut o.ppi, v, format!("{v} ppi"));
         }
     });
-    label_row(ui, "Copies", |ui| { ui.add(egui::DragValue::new(&mut o.copies).range(1..=20)); });
+    label_row(ui, "Copies", |ui| {
+        ui.add(egui::DragValue::new(&mut o.copies).range(1..=20));
+    });
     ui.add_space(6.0);
     ui.checkbox(&mut o.save_only, "Save the 16-bit TIFF instead of printing");
     if o.save_only {
@@ -216,5 +241,10 @@ pub fn draw(app: &mut LightcraftApp, ui: &mut Ui, o: &mut PrintSheetOptions) {
         });
     }
     ui.add_space(4.0);
-    ui.label(egui::RichText::new("Native Epson driver only. The sheet is converted into the paper's profile before it leaves IA Darkroom; the driver's own color is off.").color(t.text_dim));
+    ui.label(
+        egui::RichText::new(
+            "Native Epson driver only. The sheet is converted into the paper's profile before it leaves IA Darkroom; the driver's own color is off.",
+        )
+        .color(t.text_dim),
+    );
 }
