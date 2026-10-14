@@ -3248,6 +3248,7 @@ name = "lightcraft-engine"
 version = "0.7.1"
 dependencies = [
  "ab_glyph",
+ "darkroom-curator",
  "darkroom-photos",
  "darkroom-print",
  "harfrust",

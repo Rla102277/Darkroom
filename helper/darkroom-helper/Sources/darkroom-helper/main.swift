@@ -13,6 +13,9 @@
 //   originals {ids: [..]}        -> {items: [{id, path, cached, error?}]}
 //   thumbs    {ids: [..], size?, dir}  -> {items: [{id, path, error?}]}
 //   keywords  {ids: [..]}        -> {items: [{id, keywords: [..], title?, description?}]}  (via Photos' scripting interface)
+// Curator (read only):
+//   album.members {ids?: [album ids]} -> {items: [{id, title, ids: [asset ids]}]} every regular album's members, hidden included
+//   curator.measure {ids, size?: 1024} -> {items: [{id, lapVar, mean, black, white, dhash, error?}]} quick measures on Photos' preview
 // Commands (write side, milestone 3; present now so the Rust side can be tested against them):
 //   set       {ids, favorite?, hidden?}            -> {changed}
 //   album.create {title, folder?}                  -> {id, cloudId}
@@ -179,6 +182,10 @@ func assetRow(_ a: PHAsset, cloud: [String: String], resources: [PHAssetResource
         "edited": false,
         "local": true,
     ]
+    row["screenshot"] = a.mediaSubtypes.contains(.photoScreenshot)
+    row["panorama"] = a.mediaSubtypes.contains(.photoPanorama)
+    row["burstPick"] = !a.burstSelectionTypes.intersection([.autoPick, .userPick]).isEmpty
+    if a.mediaType == .video { row["duration"] = a.duration }
     if let d = a.creationDate { row["created"] = iso.string(from: d) }
     if let d = a.modificationDate { row["modified"] = iso.string(from: d) }
     if let loc = a.location {
@@ -295,6 +302,10 @@ func cmdAssets(_ p: [String: Any]) {
     opts.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
     if p["hidden"] as? Bool == true {
         opts.includeHiddenAssets = true
+    }
+    // every frame of every burst, not only the one Photos shows (the Curator stacks them)
+    if p["allBursts"] as? Bool == true {
+        opts.includeAllBurstAssets = true
     }
     var result: PHFetchResult<PHAsset>
     if let albumId = p["album"] as? String, !albumId.isEmpty {
@@ -425,6 +436,145 @@ func cmdThumbs(_ p: [String: Any]) {
         } else {
             items.append(["id": a.localIdentifier, "cloudId": key, "error": message])
         }
+    }
+    emit(["items": items])
+}
+
+// MARK: - Curator (read only)
+
+/// `album.members {ids?}`: each regular album's members, hidden photos included, in one pass (one
+/// process for the whole library instead of one per album).
+func cmdAlbumMembers(_ p: [String: Any]) {
+    requireAccess()
+    let wanted = Set(stringList(p, "ids"))
+    let opts = PHFetchOptions()
+    opts.includeHiddenAssets = true
+    var items: [[String: Any]] = []
+    let albums = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil)
+    albums.enumerateObjects { c, _, _ in
+        if !wanted.isEmpty && !wanted.contains(c.localIdentifier) { return }
+        var ids: [String] = []
+        PHAsset.fetchAssets(in: c, options: opts).enumerateObjects { a, _, _ in ids.append(a.localIdentifier) }
+        items.append(["id": c.localIdentifier, "title": c.localizedTitle ?? "", "ids": ids])
+    }
+    emit(["items": items])
+}
+
+/// Darkroom's quick measures on a grayscale copy of `cg`, at most `maxEdge` on the long side:
+/// Laplacian variance (focus), mean, share at black and at white, and a 64-bit difference hash.
+func measure(_ cg: CGImage, maxEdge: Int) -> [String: Any]? {
+    let (w0, h0) = (cg.width, cg.height)
+    guard w0 > 0, h0 > 0 else { return nil }
+    let scale = min(1.0, Double(maxEdge) / Double(max(w0, h0)))
+    let w = max(3, Int((Double(w0) * scale).rounded()))
+    let h = max(3, Int((Double(h0) * scale).rounded()))
+    let gray = CGColorSpaceCreateDeviceGray()
+    func draw(_ cg: CGImage, _ w: Int, _ h: Int) -> [UInt8]? {
+        var px = [UInt8](repeating: 0, count: w * h)
+        let ok: Bool = px.withUnsafeMutableBytes { buf in
+            guard let ctx = CGContext(data: buf.baseAddress, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                      space: gray, bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return false }
+            ctx.interpolationQuality = .medium
+            ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return true
+        }
+        return ok ? px : nil
+    }
+    guard let px = draw(cg, w, h), let small = draw(cg, 9, 8) else { return nil }
+    var sum = 0.0, black = 0, white = 0
+    for v in px {
+        sum += Double(v)
+        if v <= 4 { black += 1 }
+        if v >= 251 { white += 1 }
+    }
+    let n = Double(px.count)
+    var lsum = 0.0, lsq = 0.0, ln = 0.0
+    for y in 1..<(h - 1) {
+        let row = y * w
+        for x in 1..<(w - 1) {
+            let c = Double(px[row + x]) * 4
+            let l = c - Double(px[row + x - 1]) - Double(px[row + x + 1]) - Double(px[row - w + x]) - Double(px[row + w + x])
+            lsum += l
+            lsq += l * l
+            ln += 1
+        }
+    }
+    let lmean = ln > 0 ? lsum / ln : 0
+    let lvar = ln > 0 ? max(0, lsq / ln - lmean * lmean) : 0
+    var hash: UInt64 = 0
+    for y in 0..<8 {
+        for x in 0..<8 {
+            hash <<= 1
+            if small[y * 9 + x] > small[y * 9 + x + 1] { hash |= 1 }
+        }
+    }
+    return ["lapVar": lvar, "mean": sum / n / 255, "black": Double(black) / n, "white": Double(white) / n,
+            "dhash": String(format: "%016llx", hash), "measured": [w, h]]
+}
+
+/// `curator.measure {ids, size?: 1024}`: the quick measures on Photos' own preview of each photo,
+/// several at a time. Nothing is written to disk; iCloud-only photos get their preview fetched,
+/// never the original.
+func cmdCuratorMeasure(_ p: [String: Any]) {
+    requireAccess()
+    let ids = stringList(p, "ids")
+    if ids.isEmpty { fail("ids required") }
+    let size = max(64, min(p["size"] as? Int ?? 1024, 2048))
+    let assets = fetchAssets(ids: ids)
+    let opts = PHImageRequestOptions()
+    opts.isSynchronous = true
+    opts.deliveryMode = .highQualityFormat
+    opts.resizeMode = .fast
+    opts.isNetworkAccessAllowed = p["network"] as? Bool ?? true
+    var rows = [[String: Any]?](repeating: nil, count: assets.count)
+    let lock = NSLock()
+    DispatchQueue.concurrentPerform(iterations: assets.count) { i in
+        let a = assets[i]
+        var row: [String: Any] = ["id": a.localIdentifier]
+        if a.mediaType != .image {
+            row["error"] = "not a photo"
+        } else {
+            var cg: CGImage?
+            var message = "no preview"
+            PHImageManager.default().requestImage(for: a, targetSize: CGSize(width: size, height: size), contentMode: .aspectFit, options: opts) { img, info in
+                if let img = img {
+                    cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil)
+                } else if let err = info?[PHImageErrorKey] as? NSError {
+                    message = err.localizedDescription
+                }
+            }
+            if let cg = cg, let m = measure(cg, maxEdge: size) {
+                row.merge(m) { _, new in new }
+            } else {
+                row["error"] = message
+            }
+        }
+        lock.lock()
+        rows[i] = row
+        lock.unlock()
+    }
+    emit(["items": rows.compactMap { $0 }])
+}
+
+/// `curator.measureFiles {paths, size?}`: the same measures on image files (calibration and tests;
+/// no Photos access needed).
+func cmdCuratorMeasureFiles(_ p: [String: Any]) {
+    let paths = stringList(p, "paths")
+    if paths.isEmpty { fail("paths required") }
+    let size = max(64, min(p["size"] as? Int ?? 1024, 2048))
+    let items: [[String: Any]] = paths.map { path in
+        var row: [String: Any] = ["path": path]
+        let thumbOpts: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                                          kCGImageSourceThumbnailMaxPixelSize: size,
+                                          kCGImageSourceCreateThumbnailWithTransform: true]
+        if let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
+           let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, thumbOpts as CFDictionary),
+           let m = measure(cg, maxEdge: size) {
+            row.merge(m) { _, new in new }
+        } else {
+            row["error"] = "not an image this Mac can read"
+        }
+        return row
     }
     emit(["items": items])
 }
@@ -856,10 +1006,13 @@ case "set": cmdSet(params)
 case "album.create": cmdAlbumCreate(params)
 case "folder.create": cmdFolderCreate(params)
 case "album.add": cmdAlbumAdd(params)
+case "album.members": cmdAlbumMembers(params)
+case "curator.measure": cmdCuratorMeasure(params)
+case "curator.measureFiles": cmdCuratorMeasureFiles(params)
 case "print.queues": cmdPrintQueues()
 case "print.options": cmdPrintOptions(params)
 case "print.submit": cmdPrintSubmit(params)
 case "print.jobs": cmdPrintJobs(params)
-case "version": emit(["version": "0.1.0", "commands": ["status", "albums", "assets", "originals", "thumbs", "keywords", "keywords.set", "set", "album.create", "folder.create", "album.add", "print.queues", "print.options", "print.submit", "print.jobs"]])
+case "version": emit(["version": "0.1.0", "commands": ["status", "albums", "assets", "album.members", "curator.measure", "curator.measureFiles", "originals", "thumbs", "keywords", "keywords.set", "set", "album.create", "folder.create", "album.add", "print.queues", "print.options", "print.submit", "print.jobs"]])
 default: fail("unknown command \(command)")
 }

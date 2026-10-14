@@ -210,6 +210,47 @@ pub struct Asset {
     pub lat: Option<f64>,
     #[serde(default)]
     pub lon: Option<f64>,
+    #[serde(default)]
+    pub screenshot: bool,
+    #[serde(default)]
+    pub panorama: bool,
+    /// Photos (or you) picked this frame of its burst.
+    #[serde(default)]
+    pub burst_pick: bool,
+    /// Seconds, videos only.
+    #[serde(default)]
+    pub duration: f64,
+}
+
+/// One regular album's members (asset local ids), from `album.members`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AlbumMembers {
+    pub id: String,
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub ids: Vec<String>,
+}
+
+/// The Curator's quick measures for one photo, from `curator.measure`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Measured {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub lap_var: f64,
+    #[serde(default)]
+    pub mean: f64,
+    #[serde(default)]
+    pub black: f64,
+    #[serde(default)]
+    pub white: f64,
+    #[serde(default)]
+    pub dhash: String,
+    #[serde(default)]
+    pub error: Option<String>,
 }
 
 fn yes() -> bool {
@@ -389,6 +430,22 @@ impl Photos {
             }
             offset += n;
         }
+    }
+
+    /// The whole library for the Curator, page by page: hidden photos and every frame of every
+    /// burst included, oldest first.
+    pub fn library_page(&self, offset: usize, limit: usize) -> Result<AssetPage> {
+        Self::parse(self.call("assets", json!({"offset": offset, "limit": limit, "hidden": true, "allBursts": true}), LONG)?)
+    }
+
+    /// Every regular album's members in one call.
+    pub fn album_members(&self) -> Result<Vec<AlbumMembers>> {
+        Self::items(self.call("album.members", json!({}), LONG)?)
+    }
+
+    /// The Curator's quick measures on Photos' previews (`size` px on the long edge).
+    pub fn measure(&self, ids: &[String], size: u32) -> Result<Vec<Measured>> {
+        Self::items(self.call("curator.measure", json!({"ids": ids, "size": size}), LONG)?)
     }
 
     /// Originals on disk (fetched into Darkroom's cache, downloaded from iCloud when needed).

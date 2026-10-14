@@ -10,6 +10,7 @@ pub(crate) mod browse;
 mod color;
 pub(crate) mod convert;
 mod cull;
+pub mod curator;
 pub mod curves;
 pub(crate) mod denoise;
 mod develop;
@@ -170,6 +171,7 @@ pub fn command_specs() -> &'static [CommandSpec] {
         v.extend(face_recognize::specs());
         v.extend(activity::specs());
         v.extend(photos::specs());
+        v.extend(curator::specs());
         v.extend(print::specs());
         v.extend(looks::specs());
         v

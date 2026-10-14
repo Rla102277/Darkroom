@@ -79,13 +79,17 @@ pub struct Measures {
 }
 
 impl Measures {
-    /// Maps Laplacian variance to 0..1: `log10(1 + v) / 3`, capped. About 0.35 at a variance of
-    /// 10 (very soft at 1024 px), 0.67 at 100, 1.0 from 1000 up.
+    /// Maps Laplacian variance (0..255 gray at 1024 px) to 0..1 on a log scale:
+    /// `(log10(1 + v) - 0.5) / 2.5`, clamped. Calibrated on real frames and softened copies of
+    /// them: sharp photos measure 500 to 1000 (0.9 to 1.0); the same frames softened 4x, 8x and
+    /// 16x measure about 250, 85 and 20 (0.76, 0.57, 0.33). The default blur line, 0.35, sits near
+    /// a variance of 24, so only frames softer than an 8x blur are proposed: a foggy, minimal
+    /// frame has little detail by design, and the review decides the rest.
     pub fn sharp_from_variance(v: f32) -> f32 {
         if !v.is_finite() || v <= 0.0 {
             return 0.0;
         }
-        ((1.0 + v).log10() / 3.0).clamp(0.0, 1.0)
+        (((1.0 + v).log10() - 0.5) / 2.5).clamp(0.0, 1.0)
     }
 
     pub fn hash(&self) -> Option<u64> {

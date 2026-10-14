@@ -15,7 +15,7 @@ fn photo(id: &str, created: &str) -> Photo {
 }
 
 fn measures(sharp: f32, mean: f32, hash: u64) -> Measures {
-    Measures { sharp, lap_var: 10f32.powf(sharp * 3.0) - 1.0, mean, black: 0.0, white: 0.0, dhash: format!("{hash:016x}"), modified: None }
+    Measures { sharp, lap_var: 10f32.powf(sharp * 2.5 + 0.5) - 1.0, mean, black: 0.0, white: 0.0, dhash: format!("{hash:016x}"), modified: None }
 }
 
 fn store_of(rows: Vec<(Photo, Option<Measures>)>) -> Store {
@@ -44,7 +44,10 @@ fn iso_times_parse_with_zones() {
 fn sharpness_maps_variance_to_a_score() {
     assert_eq!(Measures::sharp_from_variance(0.0), 0.0);
     assert_eq!(Measures::sharp_from_variance(f32::NAN), 0.0);
-    assert!((Measures::sharp_from_variance(9.0) - 1.0 / 3.0).abs() < 1e-4);
+    assert!((Measures::sharp_from_variance(99.0) - 0.6).abs() < 1e-4);
+    assert!(Measures::sharp_from_variance(2.0) < 0.01, "flat");
+    let line = Measures::sharp_from_variance(24.0);
+    assert!((0.33..0.37).contains(&line), "the default blur line sits near 24: {line}");
     assert_eq!(Measures::sharp_from_variance(1e9), 1.0);
 }
 

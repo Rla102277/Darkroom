@@ -318,6 +318,8 @@ pub struct Session {
     pub photos: Option<darkroom_photos::Photos>,
     /// Darkroom: which catalog photos were linked from Apple Photos (`apple-photos.json`).
     pub photos_links: cmd::photos::Links,
+    /// Darkroom: the Curator's running or last job (`cmd/curator.rs`).
+    pub curator: cmd::curator::Curator,
 }
 
 impl Default for Session {
@@ -407,6 +409,7 @@ impl Session {
             apple_photos_background: false,
             photos: None,
             photos_links: Default::default(),
+            curator: Default::default(),
         }
     }
 
