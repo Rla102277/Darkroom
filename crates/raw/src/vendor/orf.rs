@@ -28,8 +28,13 @@
 //!   (last), the bit order and the pixel order were fixed by measurement on the CC0 files 2878 (E-300), 3540 (E-500)
 //!   and 3624 (E-330), as was the sensor-origin RGGB anchoring (the maker-note crop offsets are odd). The E-M5 Mark II
 //!   and PEN-F files were only checked for smoothness, not for CFA anchoring or black level.
-//! - Olympus's compressed ORF (most interchangeable-lens bodies since ~2008) is not decoded: no permissively
-//!   licensed description exists. It reports [`RawError::Unsupported`]; the embedded preview still works.
+//! - Olympus's compressed ORF (most interchangeable-lens bodies since ~2008, every OM System body): IFD0 still says
+//!   compression 1 and 12 bits, one strip, whose length is well under 12 bits per pixel. The format is an adaptive
+//!   predictive code, implemented here (`decode_compressed`) from the algorithm as it is publicly described (a
+//!   per-column-parity state of three words; a 3-bit sign-and-low-bits group, a unary magnitude class, a variable
+//!   number of mantissa bits; a 2-pixel-back / 2-rows-up median-style predictor): 7 header bytes are skipped, then a
+//!   single MSB-first bit stream covers the whole image, rows in order, with the state reset per row. Output is
+//!   12-bit. Verified for smoothness and CFA agreement with the embedded JPEG on the bodies we have.
 //! - The colour-filter layout is the file's Exif `CFAPattern`: GRBG on the E-1 and E-400, RGGB on the XZ-2, where
 //!   the colours of the decoded mosaic follow the embedded JPEG best with exactly that layout
 //!   (`corpus_orf_cfa_patterns`). The samples' active areas start at even offsets, so they can't tell whether the
@@ -261,6 +266,10 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
             Vec::new()
         };
         (RawData::U16(d), 12)
+    } else if chunks.len() == 1 && info.bits() <= 12 && total * 8 < (n as u64) * 12 {
+        let src = chunk_bytes(bytes, &chunks[0]).ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
+        let d = if mode == Mode::Full || stated.is_none() { decode_compressed(src, w, h)? } else { Vec::new() };
+        (RawData::U16(d), 12)
     } else {
         return Err(RawError::Unsupported("Olympus compressed ORF".into()));
     };
@@ -344,6 +353,113 @@ pub(crate) fn preview(bytes: &[u8]) -> Option<&[u8]> {
     let start = mn.base.checked_add(cs.u64(PREVIEW_START)?)? as usize;
     let len = cs.u64(PREVIEW_LENGTH)? as usize;
     bytes.get(start..start.checked_add(len)?.min(bytes.len()))
+}
+
+
+/// An MSB-first bit reader over the strip; reads past the end return zero bits (a short file gives a
+/// flat tail rather than a panic).
+struct Bits<'a> {
+    src: &'a [u8],
+    pos: usize,
+    acc: u64,
+    have: u32,
+}
+
+impl<'a> Bits<'a> {
+    fn new(src: &'a [u8]) -> Self {
+        Self { src, pos: 0, acc: 0, have: 0 }
+    }
+
+    #[inline]
+    fn fill(&mut self) {
+        while self.have <= 56 {
+            let b = self.src.get(self.pos).copied().unwrap_or(0);
+            self.pos += 1;
+            self.acc |= u64::from(b) << (56 - self.have);
+            self.have += 8;
+        }
+    }
+
+    #[inline]
+    fn peek(&mut self, n: u32) -> u32 {
+        if n == 0 {
+            return 0;
+        }
+        self.fill();
+        (self.acc >> (64 - n)) as u32
+    }
+
+    #[inline]
+    fn skip(&mut self, n: u32) {
+        self.acc <<= n;
+        self.have -= n;
+    }
+
+    #[inline]
+    fn get(&mut self, n: u32) -> u32 {
+        let v = self.peek(n);
+        self.skip(n);
+        v
+    }
+}
+
+/// Olympus's compressed 12-bit raw (see the module docs). `w` × `h` samples, row-major.
+fn decode_compressed(src: &[u8], w: usize, h: usize) -> Result<Vec<u16>> {
+    if src.len() < 8 {
+        return Err(RawError::Corrupt("ORF compressed strip too short".into()));
+    }
+    let mut out = vec![0u16; w * h];
+    let mut bits = Bits::new(&src[7..]);
+    for row in 0..h {
+        // state per column parity: [last magnitude, running average of diffs, count of small codes]
+        let mut carry = [[0i32; 3]; 2];
+        for col in 0..w {
+            let c = &mut carry[col & 1];
+            let i = if c[2] < 3 { 2 } else { 0 };
+            let mut nbits = 2 + i;
+            while nbits + i < 32 && ((c[0] as u32 & 0xffff) >> (nbits + i)) != 0 {
+                nbits += 1;
+            }
+            let sl = bits.get(3);
+            let low = (sl & 3) as i32;
+            let sign: i32 = if sl & 4 != 0 { -1 } else { 0 };
+            // magnitude class: leading zeros of the next 12 bits (12 zeros = escape)
+            let peek = bits.peek(12);
+            let zeros = if peek == 0 { 12 } else { peek.leading_zeros() - 20 };
+            let high: i32 = if zeros >= 12 {
+                bits.skip(12);
+                (bits.get(16 - nbits as u32) >> 1) as i32
+            } else {
+                bits.skip(zeros + 1);
+                zeros as i32
+            };
+            c[0] = (high << nbits) | bits.get(nbits as u32) as i32;
+            let diff = (c[0] ^ sign) + c[1];
+            c[1] = (diff * 3 + c[1]) >> 5;
+            c[2] = if c[0] > 16 { 0 } else { c[2] + 1 };
+            let pred: i32 = if row < 2 && col < 2 {
+                0
+            } else if row < 2 {
+                i32::from(out[row * w + col - 2])
+            } else if col < 2 {
+                i32::from(out[(row - 2) * w + col])
+            } else {
+                let wv = i32::from(out[row * w + col - 2]);
+                let nv = i32::from(out[(row - 2) * w + col]);
+                let nw = i32::from(out[(row - 2) * w + col - 2]);
+                if (wv < nw && nw < nv) || (nv < nw && nw < wv) {
+                    if (wv - nw).abs() > 32 || (nv - nw).abs() > 32 { wv + nv - nw } else { (wv + nv) >> 1 }
+                } else if (wv - nw).abs() > (nv - nw).abs() {
+                    wv
+                } else {
+                    nv
+                }
+            };
+            let v = pred + ((diff << 2) | low);
+            out[row * w + col] = v.clamp(0, 4095) as u16;
+        }
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -773,5 +889,106 @@ mod tests {
         for cut in [bytes.len() - 1, bytes.len() - 40, bytes.len() / 2, 100] {
             let _ = crate::decode(&bytes[..cut]);
         }
+    }
+
+    /// The compressed code written back (the decoder's mirror), for a round trip.
+    fn encode_compressed(px: &[u16], w: usize, h: usize) -> Vec<u8> {
+        struct W {
+            out: Vec<u8>,
+            acc: u64,
+            n: u32,
+        }
+        impl W {
+            fn put(&mut self, v: u32, bits: u32) {
+                for i in (0..bits).rev() {
+                    self.acc = (self.acc << 1) | u64::from((v >> i) & 1);
+                    self.n += 1;
+                    if self.n == 8 {
+                        self.out.push(self.acc as u8);
+                        self.acc = 0;
+                        self.n = 0;
+                    }
+                }
+            }
+        }
+        let mut wr = W { out: vec![0u8; 7], acc: 0, n: 0 };
+        for row in 0..h {
+            let mut carry = [[0i32; 3]; 2];
+            for col in 0..w {
+                let c = &mut carry[col & 1];
+                let i = if c[2] < 3 { 2 } else { 0 };
+                let mut nbits = 2 + i;
+                while nbits + i < 32 && ((c[0] as u32 & 0xffff) >> (nbits + i)) != 0 {
+                    nbits += 1;
+                }
+                let pred: i32 = if row < 2 && col < 2 {
+                    0
+                } else if row < 2 {
+                    i32::from(px[row * w + col - 2])
+                } else if col < 2 {
+                    i32::from(px[(row - 2) * w + col])
+                } else {
+                    let wv = i32::from(px[row * w + col - 2]);
+                    let nv = i32::from(px[(row - 2) * w + col]);
+                    let nw = i32::from(px[(row - 2) * w + col - 2]);
+                    if (wv < nw && nw < nv) || (nv < nw && nw < wv) {
+                        if (wv - nw).abs() > 32 || (nv - nw).abs() > 32 { wv + nv - nw } else { (wv + nv) >> 1 }
+                    } else if (wv - nw).abs() > (nv - nw).abs() {
+                        wv
+                    } else {
+                        nv
+                    }
+                };
+                let r = i32::from(px[row * w + col]) - pred;
+                let low = (r & 3) as u32;
+                let diff = r >> 2;
+                let d = diff - c[1];
+                let (sign, mag) = if d >= 0 { (0u32, d) } else { (1u32, -d - 1) };
+                wr.put(sign << 2 | low, 3);
+                let high = mag >> nbits;
+                if high < 12 {
+                    wr.put(1, high as u32 + 1);
+                } else {
+                    wr.put(0, 12);
+                    wr.put((high << 1) as u32, 16 - nbits as u32);
+                }
+                wr.put((mag & ((1 << nbits) - 1)) as u32, nbits as u32);
+                c[0] = mag;
+                let diff2 = (c[0] ^ if sign == 1 { -1 } else { 0 }) + c[1];
+                assert_eq!(diff2, diff);
+                c[1] = (diff * 3 + c[1]) >> 5;
+                c[2] = if c[0] > 16 { 0 } else { c[2] + 1 };
+            }
+        }
+        if wr.n > 0 {
+            wr.put(0, 8 - wr.n);
+        }
+        wr.out.extend_from_slice(&[0; 8]);
+        wr.out
+    }
+
+    #[test]
+    fn compressed_round_trip_covers_small_and_escaped_codes() {
+        let (w, h) = (24usize, 10usize);
+        // a smooth ramp with a few hard steps (large residuals use the escape path)
+        let px: Vec<u16> = (0..h)
+            .flat_map(|y| (0..w).map(move |x| {
+                let v = 200 + (x * 37 + y * 11) % 900 + if x == 13 { 3000 } else { 0 } + if y == 6 { 700 } else { 0 };
+                v.min(4095) as u16
+            }))
+            .collect();
+        let bytes = encode_compressed(&px, w, h);
+        assert_eq!(decode_compressed(&bytes, w, h).unwrap(), px);
+    }
+
+    #[test]
+    fn compressed_strip_is_recognised_by_its_size() {
+        let (w, h) = (24usize, 10usize);
+        let px: Vec<u16> = (0..w * h).map(|i| (100 + i % 50) as u16).collect();
+        let data = encode_compressed(&px, w, h);
+        assert!(data.len() * 8 < w * h * 12);
+        let bytes = orf(w as u32, h as u32, 12, data);
+        let r = crate::decode(&bytes).unwrap();
+        assert_eq!((r.data, r.bits), (RawData::U16(px), 12));
     }
 }
