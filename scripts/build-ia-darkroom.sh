@@ -43,7 +43,8 @@ sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/${VERSION%%-*}/g" -e "s/@B
   packaging/macos/Info.plist.in >"$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
 printf 'APPL????' >"$APP/Contents/PkgInfo"
-xattr -cr "$APP"
+# clear extended attributes (newer macOS xattr has no -r)
+find "$APP" -exec xattr -c {} + 2>/dev/null || true
 
 echo "==> signing (ad hoc)"
 ENT="packaging/macos/entitlements.plist"
