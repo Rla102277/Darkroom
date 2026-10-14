@@ -41,6 +41,7 @@ lightcraft-segment = { path = "crates/segment" }
 lightcraft-geocode = { path = "crates/geocode" }
 darkroom-photos = { path = "crates/darkroom-photos" }
 darkroom-print = { path = "crates/darkroom-print" }
+darkroom-curator = { path = "crates/darkroom-curator" }
 
 # foundation
 thiserror = "2"

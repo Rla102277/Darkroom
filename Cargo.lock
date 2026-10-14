@@ -1195,6 +1195,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "darkroom-curator"
+version = "0.7.1"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "darkroom-photos"
 version = "0.7.1"
 dependencies = [

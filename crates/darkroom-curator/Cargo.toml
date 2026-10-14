@@ -1,0 +1,15 @@
+[package]
+name = "darkroom-curator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Darkroom's Curator, the part that does not need macOS: the store of per-photo signals, the rules, the library report, stacks, cull and the review plans"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
