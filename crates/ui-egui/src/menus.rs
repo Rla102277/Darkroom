@@ -165,6 +165,7 @@ pub const UI_COMMANDS: &[UiCommand] = &[
     ("view.focusSearch", "Find…", Some("Cmd+F"), "Edit"),
     ("dialog.export", "Export…", None, "File"),
     ("dialog.printSheet", "Print Sheet…", Some("Cmd+P"), "File"),
+    ("dialog.curator", "Curator…", Some("Cmd+Alt+K"), "Window"),
     ("dialog.contactSheet", "Contact Sheet PDF…", None, "File"),
     ("app.contactSheet", "Export Contact Sheet PDF", None, ""),
     ("photo.editInPhotoCraft", "Edit in PhotoCraft", Some("Cmd+Shift+E"), "Photo>Edit In"),
@@ -1198,6 +1199,10 @@ pub fn run_ui_command(app: &mut LightcraftApp, id: &str, p: &Value) -> Option<Re
             let groups =
                 app.session.copy_groups.iter().filter_map(|g| serde_json::to_value(g).ok().and_then(|v| v.as_str().map(str::to_string))).collect();
             app.ui.dialog = Some(Dialog::CopySettings { groups });
+            Ok(Value::Null)
+        }
+        "dialog.curator" => {
+            crate::curator_window::open(app);
             Ok(Value::Null)
         }
         "dialog.printSheet" => {

@@ -450,6 +450,13 @@ fn strs(p: &Value, key: &str) -> Vec<String> {
     p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_default()
 }
 
+/// A thumbnail file the helper wrote, decoded for the window: (width, height, RGBA bytes).
+pub fn thumbnail_rgba(path: &Path, max_edge: u32) -> Option<(usize, usize, Vec<u8>)> {
+    let bytes = std::fs::read(path).ok()?;
+    let t = lightcraft_codecs::decode_thumbnail(&bytes, max_edge).ok()?;
+    Some((t.image.width, t.image.height, t.image.data.iter().flatten().copied().collect()))
+}
+
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(query "curator.status", "Curator Status", [], None,
@@ -465,7 +472,7 @@ pub fn specs() -> Vec<CommandSpec> {
                 "plans": list_plans(&dir).iter().map(Plan::summary).collect::<Vec<_>>(),
             }))
         }),
-        cmd!(query "curator.scan", "Scan Apple Photos for the Curator", ["Library", "Curator"], None,
+        cmd!(query "curator.scan", "Scan Apple Photos for the Curator", [], None,
         "{measureLimit?: n (measure at most n previews this run), wait?: bool (default: in the background in the app, waits in the CLI)} → {photos, added, changed, removed, albums, measured, measureFailed, toMeasure, measuredTotal, errors, cancelled} or {started} — Layer 1: every photo's PhotoKit facts, album membership, and quick measures (focus, exposure, a perceptual hash) on Photos' 1024 px previews; only new and edited photos are measured again. Reads only; nothing in Photos changes.",
         photos_enabled, |s, p| {
             let photos = s.photos.clone().ok_or_else(|| bad("curator.scan", super::photos::unavailable()))?;
@@ -475,14 +482,14 @@ pub fn specs() -> Vec<CommandSpec> {
             let wait = wait_param(s, p);
             start_job(s, "scan", "Curator: scanning Apple Photos", wait, move |cancel, progress| run_scan(&photos, &dir, limit, cancel, progress))
         }),
-        cmd!(query "curator.cancel", "Stop the Curator", ["Curator"], None,
+        cmd!(query "curator.cancel", "Stop the Curator", [], None,
         "{} → {cancelling} — stops the running scan or apply between chunks; what is done is kept",
         always, |s, _| {
             let running = s.curator.running();
             s.curator.cancel.store(true, Ordering::Relaxed);
             Ok(json!({"cancelling": running}))
         }),
-        cmd!(query "curator.report", "Curator Library Report", ["Library", "Curator"], None,
+        cmd!(query "curator.report", "Curator Library Report", [], None,
         "{} → {report: {total, images, videos, byYear, byDevice, bursts, exactDuplicates, blur, blackOrBlown, albums, overlaps, first: [{what, photos, minutes}], notes, …}, text} — the library in numbers, from the store (run curator.scan first)",
         always, |s, _| {
             let dir = curator_dir(s);
@@ -494,7 +501,7 @@ pub fn specs() -> Vec<CommandSpec> {
             let r = darkroom_curator::report::build(&store, &rules);
             Ok(json!({"report": r, "text": r.text()}))
         }),
-        cmd!(query "curator.stacks", "Curator: Find Stacks", ["Library", "Curator"], None,
+        cmd!(query "curator.stacks", "Curator: Find Stacks", [], None,
         "{} → {plan summary, stacks} — bursts, exact and near duplicates become stacks with one winner (your favorite or edit always wins); the losers become a plan to review (Pick: No). Nothing is written to Photos.",
         always, |s, _| {
             const C: &str = "curator.stacks";
@@ -512,7 +519,7 @@ pub fn specs() -> Vec<CommandSpec> {
             v["stacks"] = json!(store.stacks.len());
             Ok(v)
         }),
-        cmd!(query "curator.cull", "Curator: Cull", ["Library", "Curator"], None,
+        cmd!(query "curator.cull", "Curator: Cull", [], None,
         "{} → {plan summary} — black, blown, pocket and blurred frames, screenshots outside a documents album, and too many near-identical frames (run curator.stacks first for that rule), as a plan to review (Pick: No, Kind: Junk). Favorites and edits are never proposed. Nothing is written to Photos.",
         always, |s, _| {
             const C: &str = "curator.cull";
@@ -569,7 +576,7 @@ pub fn specs() -> Vec<CommandSpec> {
             save_plan(&dir, &plan, C)?;
             Ok(plan.summary())
         }),
-        cmd!(query "curator.apply", "Curator: Apply to Apple Photos", ["Curator"], None,
+        cmd!(query "curator.apply", "Curator: Apply to Apple Photos", [], None,
         "{id?: plan id (default: the newest), confirm?: false, wait?: bool} → without confirm: {plan summary, wouldWrite: {photos, keywords}} and nothing changes; with confirm: true, writes the accepted groups' keywords (minus what you took out) to Photos and records every decision → {photos, written, failed} or {started}. Never deletes or hides.",
         photos_enabled, |s, p| {
             const C: &str = "curator.apply";

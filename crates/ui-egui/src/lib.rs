@@ -11,6 +11,7 @@ pub mod apple_photos;
 pub mod brush_live;
 pub mod control;
 pub mod credits;
+pub mod curator_window;
 pub mod date_picker;
 pub mod docking;
 pub mod export_task;
@@ -274,6 +275,8 @@ pub struct LightcraftApp {
     pub(crate) model_setup: model_setup::Pending,
     /// Darkroom: the Apple Photos sidebar section's state.
     pub apple_photos: apple_photos::Panel,
+    /// Darkroom: the Curator window (Window > Curator…).
+    pub curator: curator_window::CuratorWindow,
     /// Per-catalog-revision caches of library-wide results the panels show every frame
     /// (expensive on big libraries).
     pub caches: Caches,
@@ -485,6 +488,7 @@ impl LightcraftApp {
             activity_expanded: false,
             model_setup: Default::default(),
             apple_photos: Default::default(),
+            curator: Default::default(),
         }
     }
 
@@ -1316,6 +1320,7 @@ impl LightcraftApp {
             egui::CentralPanel::default().frame(egui::Frame::NONE.fill(egui::Color32::BLACK)).show(ui, |ui| panels::detail::show(self, ui));
             panels::second::show(self, &ctx);
             panels::notices::show(self, &ctx);
+            curator_window::show(self, &ctx);
             panels::dialogs::show(self, &ctx);
             panels::library_problem::show(self, &ctx);
             panels::toast(self, &ctx);
@@ -1332,6 +1337,7 @@ impl LightcraftApp {
         self.lights_out(&ctx);
         panels::second::show(self, &ctx);
         panels::notices::show(self, &ctx);
+        curator_window::show(self, &ctx);
         panels::dialogs::show(self, &ctx);
         panels::library_problem::show(self, &ctx);
         export_task::poll(self, &ctx);
