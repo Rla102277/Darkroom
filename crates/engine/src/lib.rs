@@ -18,9 +18,9 @@ pub mod activity;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod apple_photos;
 pub mod availability;
+pub(crate) mod camera_local_tone;
 pub(crate) mod camera_preview;
 pub mod camera_profiles;
-pub(crate) mod camera_local_tone;
 pub mod cmd;
 pub mod config;
 pub mod contact_sheet;

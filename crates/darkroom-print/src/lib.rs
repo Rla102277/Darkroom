@@ -261,7 +261,7 @@ pub fn installed_profiles() -> Vec<(std::path::PathBuf, String)> {
     for d in profile_dirs() {
         walk(&d, &mut out, 0);
     }
-    out.sort_by(|a, b| a.1.to_lowercase().cmp(&b.1.to_lowercase()));
+    out.sort_by_key(|a| a.1.to_lowercase());
     out
 }
 

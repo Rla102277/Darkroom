@@ -57,13 +57,7 @@ pub fn remove_duplicates(s: &mut Session, titles: &[String], keep_group: &str) -
         .lut_profiles
         .iter()
         .filter(|l| titles.iter().any(|t| t == &l.name))
-        .filter(|l| {
-            if l.group.eq_ignore_ascii_case(keep_group) {
-                !seen.insert(l.name.clone())
-            } else {
-                true
-            }
-        })
+        .filter(|l| if l.group.eq_ignore_ascii_case(keep_group) { !seen.insert(l.name.clone()) } else { true })
         .map(|l| l.id.clone())
         .collect();
     let n = doomed.len();
@@ -112,31 +106,31 @@ pub fn install_bundled(s: &mut Session) -> Vec<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     vec![
         cmd!(query "looks.bundled", "Bundled Looks", [], None,
-            "{} → {dir?, groups: [{folder, group, cubes, installed}]} — the Looks shipped with IA Darkroom and whether each group is in this library's Profile browser",
-            always, |s, _| {
-                let dir = bundled_dir();
-                let mut groups = Vec::new();
-                if let Some(d) = &dir && let Ok(rd) = std::fs::read_dir(d) {
-                    for e in rd.flatten() {
-                        let p = e.path();
-                        if !p.is_dir() { continue; }
-                        let folder = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                        let cubes = std::fs::read_dir(&p).map(|r| r.flatten().filter(|f| f.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("cube"))).count()).unwrap_or(0);
-                        let installed = s.lut_profiles.iter().filter(|l| l.group.eq_ignore_ascii_case(&folder)).count();
-                        groups.push(json!({"folder": folder, "cubes": cubes, "installed": installed}));
-                    }
+        "{} → {dir?, groups: [{folder, group, cubes, installed}]} — the Looks shipped with IA Darkroom and whether each group is in this library's Profile browser",
+        always, |s, _| {
+            let dir = bundled_dir();
+            let mut groups = Vec::new();
+            if let Some(d) = &dir && let Ok(rd) = std::fs::read_dir(d) {
+                for e in rd.flatten() {
+                    let p = e.path();
+                    if !p.is_dir() { continue; }
+                    let folder = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let cubes = std::fs::read_dir(&p).map(|r| r.flatten().filter(|f| f.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("cube"))).count()).unwrap_or(0);
+                    let installed = s.lut_profiles.iter().filter(|l| l.group.eq_ignore_ascii_case(&folder)).count();
+                    groups.push(json!({"folder": folder, "cubes": cubes, "installed": installed}));
                 }
-                Ok(json!({"dir": dir.map(|d| d.to_string_lossy().to_string()), "groups": groups}))
-            }),
+            }
+            Ok(json!({"dir": dir.map(|d| d.to_string_lossy().to_string()), "groups": groups}))
+        }),
         cmd!(query "looks.install", "Install Bundled Looks", [], None,
             "{} → {imported: [{folder, installed, removed}]} — installs the bundled Looks that are not in this library yet, removing older copies of the same Looks",
             always, |s, _| Ok(json!({"imported": install_bundled(s)}))),
         cmd!(query "looks.cleanup", "Remove Duplicate Looks", [], None,
-            "{} → {removed} — removes repeated imported Looks (same name in another group, or more than once in a group), keeping one copy in the bundled group",
-            always, |s, _| {
-                let names: Vec<String> = s.lut_profiles.iter().filter(|l| l.name.starts_with("IA ")).map(|l| l.name.clone()).collect();
-                let removed = remove_duplicates(s, &names, "Infinite Arch Looks");
-                Ok(json!({"removed": removed}))
-            }),
+        "{} → {removed} — removes repeated imported Looks (same name in another group, or more than once in a group), keeping one copy in the bundled group",
+        always, |s, _| {
+            let names: Vec<String> = s.lut_profiles.iter().filter(|l| l.name.starts_with("IA ")).map(|l| l.name.clone()).collect();
+            let removed = remove_duplicates(s, &names, "Infinite Arch Looks");
+            Ok(json!({"removed": removed}))
+        }),
     ]
 }

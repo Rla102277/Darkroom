@@ -408,7 +408,8 @@ fn load_bytes_now(
         let ((xy, t, camera_look), mattes) = rayon::join(|| crate::camera_preview::starting_colour(&mut raw, &bytes), || dng_mattes(&bytes, &info));
         let camera_tone = camera_look.as_ref().map(|p| p.tone).or_else(|| raw.color.profile.tone_curve.as_ref().and_then(dng_tone_curve));
         // the raw's own local tone map (ProRAW), else one learned from the camera JPEG (every other raw)
-        let local_tone = local_tone(&raw).or_else(|| crate::camera_local_tone::synthesize(&raw, &bytes, &t, camera_look.as_ref(), camera_tone.as_ref()));
+        let local_tone =
+            local_tone(&raw).or_else(|| crate::camera_local_tone::synthesize(&raw, &bytes, &t, camera_look.as_ref(), camera_tone.as_ref()));
         drop(bytes);
         // Previews and thumbnails bin the mosaic straight to (about) the size they need; only
         // larger levels (exports, 1:1) demosaic the whole sensor.

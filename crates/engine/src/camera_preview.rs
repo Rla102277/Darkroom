@@ -1051,6 +1051,15 @@ fn monochrome(reference: &Rgb32f) -> bool {
 /// `transform` is the colour the photo gets otherwise (the spectral matrices or the fallback's); the look keeps it and
 /// adds the tone curve alone ([`fit_tone_only`]), as [`fit_look`] tries the photo's own colour after a profile's. The
 /// chroma curve stays neutral: the JPEG has no colourfulness to learn.
+/// IA Darkroom: the camera's global tone curve learned from its JPEG for any raw that has one, colour
+/// left as the file states it. For raws whose colour comes from their own matrices (a Leica DNG has
+/// matrices but no `ProfileToneCurve`), so the camera local tone map has a curve to invert.
+pub(crate) fn tone_from_preview(raw: &RawImage, bytes: &[u8], transform: &CameraTransform) -> Option<CameraTone> {
+    let (sensor, reference, clipped) = proxies(raw, bytes, transform, PROXY)?;
+    let unclipped = without_clipped(&sensor, &clipped);
+    fit_tone_only(unclipped.as_ref().unwrap_or(&sensor), &reference, None).map(|look| look.tone)
+}
+
 fn monochrome_look(raw: &RawImage, bytes: &[u8], transform: &CameraTransform) -> Option<CameraLook> {
     if !file_local_look(raw.format) {
         return None;

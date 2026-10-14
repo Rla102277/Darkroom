@@ -65,11 +65,7 @@ fn photos_enabled(s: &Session) -> std::result::Result<(), String> {
 }
 
 pub fn unavailable() -> String {
-    if cfg!(target_os = "macos") {
-        darkroom_photos::Error::NoHelper.to_string()
-    } else {
-        darkroom_photos::Error::NotMac.to_string()
-    }
+    if cfg!(target_os = "macos") { darkroom_photos::Error::NoHelper.to_string() } else { darkroom_photos::Error::NotMac.to_string() }
 }
 
 fn client(s: &Session, cmd: &str) -> Result<darkroom_photos::Photos> {
@@ -258,7 +254,6 @@ fn link(s: &mut Session, p: &Value) -> Result<Value> {
     }))
 }
 
-
 /// The keyword families IA Darkroom writes back to Photos.
 pub const PICK_SELECT: &str = "Pick: Select";
 pub const PICK_NO: &str = "Pick: No";
@@ -336,55 +331,55 @@ fn push(s: &mut Session, p: &Value) -> Result<Value> {
 pub fn specs() -> Vec<CommandSpec> {
     let mut v = vec![
         cmd!(query "photos.status", "Apple Photos Status", [], None,
-            "{} → {available, helper?, authorized?, status?, libraryPath?, assets?, albums?, linked} — whether the Mac helper is there and Photos access is granted",
-            always, |s, _| {
-                let linked = s.photos_links.by_id.len();
-                let Some(photos) = s.photos.clone() else {
-                    return Ok(json!({"available": false, "reason": unavailable(), "linked": linked}));
-                };
-                let helper = darkroom_photos::locate_helper().map(|p| p.to_string_lossy().to_string());
-                match photos.status() {
-                    Ok(st) => {
-                        let mut v = serde_json::to_value(st).unwrap_or_default();
-                        v["available"] = json!(true);
-                        v["helper"] = json!(helper);
-                        v["linked"] = json!(linked);
-                        Ok(v)
-                    }
-                    Err(e) => Ok(json!({"available": true, "helper": helper, "authorized": false, "reason": e.to_string(), "linked": linked})),
+        "{} → {available, helper?, authorized?, status?, libraryPath?, assets?, albums?, linked} — whether the Mac helper is there and Photos access is granted",
+        always, |s, _| {
+            let linked = s.photos_links.by_id.len();
+            let Some(photos) = s.photos.clone() else {
+                return Ok(json!({"available": false, "reason": unavailable(), "linked": linked}));
+            };
+            let helper = darkroom_photos::locate_helper().map(|p| p.to_string_lossy().to_string());
+            match photos.status() {
+                Ok(st) => {
+                    let mut v = serde_json::to_value(st).unwrap_or_default();
+                    v["available"] = json!(true);
+                    v["helper"] = json!(helper);
+                    v["linked"] = json!(linked);
+                    Ok(v)
                 }
-            }),
+                Err(e) => Ok(json!({"available": true, "helper": helper, "authorized": false, "reason": e.to_string(), "linked": linked})),
+            }
+        }),
         cmd!(query "photos.albums", "Apple Photos Albums", [], None,
-            "{} → {items: [{id, cloudId, title, kind: folder|album|smart, depth, parent, count}]} — the folder and album tree, depth first; Photos' own smart albums have parent \"smart\"",
-            photos_enabled, |s, _| {
-                let photos = client(s, "photos.albums")?;
-                let items = photos.albums().map_err(|e| bad("photos.albums", e.to_string()))?;
-                Ok(json!({"items": items}))
-            }),
+        "{} → {items: [{id, cloudId, title, kind: folder|album|smart, depth, parent, count}]} — the folder and album tree, depth first; Photos' own smart albums have parent \"smart\"",
+        photos_enabled, |s, _| {
+            let photos = client(s, "photos.albums")?;
+            let items = photos.albums().map_err(|e| bad("photos.albums", e.to_string()))?;
+            Ok(json!({"items": items}))
+        }),
         cmd!(query "photos.assets", "Apple Photos Assets", [], None,
-            "{album?: albumId, offset?: 0, limit?: 2000, hidden?: false} → {items: [{id, cloudId, filename, width, height, created, favorite, hidden, burst, live, raw, edited, mediaType, linked?: photoId}], total, offset} — a page of the library (or an album), oldest first",
-            photos_enabled, |s, p| {
-                let photos = client(s, "photos.assets")?;
-                let album = str_param(p, "album").filter(|a| !a.is_empty());
-                let offset = p.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
-                let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(2000).clamp(1, 20000) as usize;
-                let hidden = p.get("hidden").and_then(Value::as_bool).unwrap_or(false);
-                let page = photos.assets(album, offset, limit, hidden).map_err(|e| bad("photos.assets", e.to_string()))?;
-                let items: Vec<Value> = page.items.iter().map(|a| {
-                    let mut v = serde_json::to_value(a).unwrap_or_default();
-                    if let Some(l) = s.photos_links.by_id.get(a.stable_id()) {
-                        v["linked"] = json!(l.photo);
-                    }
-                    v
-                }).collect();
-                Ok(json!({"items": items, "total": page.total, "offset": page.offset}))
-            }),
+        "{album?: albumId, offset?: 0, limit?: 2000, hidden?: false} → {items: [{id, cloudId, filename, width, height, created, favorite, hidden, burst, live, raw, edited, mediaType, linked?: photoId}], total, offset} — a page of the library (or an album), oldest first",
+        photos_enabled, |s, p| {
+            let photos = client(s, "photos.assets")?;
+            let album = str_param(p, "album").filter(|a| !a.is_empty());
+            let offset = p.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+            let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(2000).clamp(1, 20000) as usize;
+            let hidden = p.get("hidden").and_then(Value::as_bool).unwrap_or(false);
+            let page = photos.assets(album, offset, limit, hidden).map_err(|e| bad("photos.assets", e.to_string()))?;
+            let items: Vec<Value> = page.items.iter().map(|a| {
+                let mut v = serde_json::to_value(a).unwrap_or_default();
+                if let Some(l) = s.photos_links.by_id.get(a.stable_id()) {
+                    v["linked"] = json!(l.photo);
+                }
+                v
+            }).collect();
+            Ok(json!({"items": items, "total": page.total, "offset": page.offset}))
+        }),
         cmd!(query "photos.links", "Apple Photos Links", [], None,
-            "{} → {items: [{id (cloud id), photo, localId, path}]} — which catalog photos came from Apple Photos",
-            always, |s, _| {
-                let items: Vec<Value> = s.photos_links.by_id.iter().map(|(k, l)| json!({"id": k, "photo": l.photo, "localId": l.local_id, "path": l.path})).collect();
-                Ok(json!({"items": items}))
-            }),
+        "{} → {items: [{id (cloud id), photo, localId, path}]} — which catalog photos came from Apple Photos",
+        always, |s, _| {
+            let items: Vec<Value> = s.photos_links.by_id.iter().map(|(k, l)| json!({"id": k, "photo": l.photo, "localId": l.local_id, "path": l.path})).collect();
+            Ok(json!({"items": items}))
+        }),
         cmd!(query "photos.link", "Link from Apple Photos", ["File"], None,
             "{album?: Photos album id, ids?: [asset ids], albumName?: catalog album name (default \"Photos: <album title>\"), withKeywords?: true, hidden?: false} → {linked, fresh, alreadyInCatalog, already, skippedVideo, metadataSet, failed: [{id?, error}], album?: catalog album id} — fetches the originals into Darkroom's cache and adds them in place; Photos' keywords, title and caption are copied and favorites become picks. Nothing in Photos changes.",
             photos_enabled, link),
@@ -392,104 +387,104 @@ pub fn specs() -> Vec<CommandSpec> {
             "{ids?: catalog photo ids (default: the selection), favorites?: true, keywords?: true, titles?: true} → {photos, notLinked, favoritesChanged, keywordsChanged, failed} — picks become favorites plus the keyword Pick: Select, rejects get Pick: No, and the catalog's keywords, title and caption are written to the linked Photos items. Nothing is hidden or deleted.",
             photos_enabled, push),
         cmd!(query "photos.set", "Set in Apple Photos", [], None,
-            "{ids?: catalog photo ids (default: the selection), favorite?: bool, hidden?: bool} → {changed, requested, notLinked} — writes favorite / hidden state back to Photos for linked photos",
-            photos_enabled, |s, p| {
-                const C: &str = "photos.set";
-                let photos = client(s, C)?;
-                let favorite = p.get("favorite").and_then(Value::as_bool);
-                let hidden = p.get("hidden").and_then(Value::as_bool);
-                if favorite.is_none() && hidden.is_none() {
-                    return Err(bad(C, "favorite or hidden required"));
+        "{ids?: catalog photo ids (default: the selection), favorite?: bool, hidden?: bool} → {changed, requested, notLinked} — writes favorite / hidden state back to Photos for linked photos",
+        photos_enabled, |s, p| {
+            const C: &str = "photos.set";
+            let photos = client(s, C)?;
+            let favorite = p.get("favorite").and_then(Value::as_bool);
+            let hidden = p.get("hidden").and_then(Value::as_bool);
+            if favorite.is_none() && hidden.is_none() {
+                return Err(bad(C, "favorite or hidden required"));
+            }
+            let targets = s.targets(p);
+            let mut ids = Vec::new();
+            let mut not_linked = 0;
+            for t in &targets {
+                match s.photos_links.id_of(*t) {
+                    Some(id) => ids.push(id.to_string()),
+                    None => not_linked += 1,
                 }
-                let targets = s.targets(p);
-                let mut ids = Vec::new();
-                let mut not_linked = 0;
-                for t in &targets {
-                    match s.photos_links.id_of(*t) {
-                        Some(id) => ids.push(id.to_string()),
-                        None => not_linked += 1,
-                    }
+            }
+            if ids.is_empty() {
+                return Ok(json!({"changed": 0, "requested": 0, "notLinked": not_linked}));
+            }
+            let changed = photos.set(&ids, favorite, hidden).map_err(|e| bad(C, e.to_string()))?;
+            for id in &ids {
+                if let Some(l) = s.photos_links.by_id.get_mut(id) {
+                    if let Some(f) = favorite { l.favorite = f; }
+                    if let Some(h) = hidden { l.hidden = h; }
                 }
-                if ids.is_empty() {
-                    return Ok(json!({"changed": 0, "requested": 0, "notLinked": not_linked}));
-                }
-                let changed = photos.set(&ids, favorite, hidden).map_err(|e| bad(C, e.to_string()))?;
-                for id in &ids {
-                    if let Some(l) = s.photos_links.by_id.get_mut(id) {
-                        if let Some(f) = favorite { l.favorite = f; }
-                        if let Some(h) = hidden { l.hidden = h; }
-                    }
-                }
-                let _ = save_links(s);
-                Ok(json!({"changed": changed, "requested": ids.len(), "notLinked": not_linked}))
-            }),
+            }
+            let _ = save_links(s);
+            Ok(json!({"changed": changed, "requested": ids.len(), "notLinked": not_linked}))
+        }),
         cmd!(query "photos.setKeywords", "Set Keywords in Apple Photos", [], None,
-            "{ids?: catalog photo ids (default: the selection), add?: [..], remove?: [..], title?, caption?} → {changed, failed: [..], notLinked} — keywords, title and caption written to Photos for linked photos",
-            photos_enabled, |s, p| {
-                const C: &str = "photos.setKeywords";
-                let photos = client(s, C)?;
-                let add = strs(p, "add");
-                let remove = strs(p, "remove");
-                let title = str_param(p, "title").map(str::to_string);
-                let caption = str_param(p, "caption").map(str::to_string);
-                if add.is_empty() && remove.is_empty() && title.is_none() && caption.is_none() {
-                    return Err(bad(C, "add, remove, title or caption required"));
+        "{ids?: catalog photo ids (default: the selection), add?: [..], remove?: [..], title?, caption?} → {changed, failed: [..], notLinked} — keywords, title and caption written to Photos for linked photos",
+        photos_enabled, |s, p| {
+            const C: &str = "photos.setKeywords";
+            let photos = client(s, C)?;
+            let add = strs(p, "add");
+            let remove = strs(p, "remove");
+            let title = str_param(p, "title").map(str::to_string);
+            let caption = str_param(p, "caption").map(str::to_string);
+            if add.is_empty() && remove.is_empty() && title.is_none() && caption.is_none() {
+                return Err(bad(C, "add, remove, title or caption required"));
+            }
+            let targets = s.targets(p);
+            let mut changes = Vec::new();
+            let mut not_linked = 0;
+            for t in &targets {
+                match s.photos_links.id_of(*t) {
+                    Some(id) => changes.push(darkroom_photos::KeywordChange { id: id.to_string(), add: add.clone(), remove: remove.clone(), title: title.clone(), description: caption.clone() }),
+                    None => not_linked += 1,
                 }
-                let targets = s.targets(p);
-                let mut changes = Vec::new();
-                let mut not_linked = 0;
-                for t in &targets {
-                    match s.photos_links.id_of(*t) {
-                        Some(id) => changes.push(darkroom_photos::KeywordChange { id: id.to_string(), add: add.clone(), remove: remove.clone(), title: title.clone(), description: caption.clone() }),
-                        None => not_linked += 1,
-                    }
-                }
-                if changes.is_empty() {
-                    return Ok(json!({"changed": 0, "failed": [], "notLinked": not_linked}));
-                }
-                let mut v = photos.set_keywords(&changes).map_err(|e| bad(C, e.to_string()))?;
-                v["notLinked"] = json!(not_linked);
-                Ok(v)
-            }),
+            }
+            if changes.is_empty() {
+                return Ok(json!({"changed": 0, "failed": [], "notLinked": not_linked}));
+            }
+            let mut v = photos.set_keywords(&changes).map_err(|e| bad(C, e.to_string()))?;
+            v["notLinked"] = json!(not_linked);
+            Ok(v)
+        }),
         cmd!(query "photos.createAlbum", "Create Apple Photos Album", [], None,
-            "{title, folder?: Photos folder id} → {id}",
-            photos_enabled, |s, p| {
-                const C: &str = "photos.createAlbum";
-                let photos = client(s, C)?;
-                let title = str_param(p, "title").filter(|t| !t.trim().is_empty()).ok_or_else(|| bad(C, "title required"))?;
-                let id = photos.create_album(title, str_param(p, "folder").filter(|f| !f.is_empty())).map_err(|e| bad(C, e.to_string()))?;
-                Ok(json!({"id": id}))
-            }),
+        "{title, folder?: Photos folder id} → {id}",
+        photos_enabled, |s, p| {
+            const C: &str = "photos.createAlbum";
+            let photos = client(s, C)?;
+            let title = str_param(p, "title").filter(|t| !t.trim().is_empty()).ok_or_else(|| bad(C, "title required"))?;
+            let id = photos.create_album(title, str_param(p, "folder").filter(|f| !f.is_empty())).map_err(|e| bad(C, e.to_string()))?;
+            Ok(json!({"id": id}))
+        }),
         cmd!(query "photos.createFolder", "Create Apple Photos Folder", [], None,
-            "{title, parent?: Photos folder id} → {id}",
-            photos_enabled, |s, p| {
-                const C: &str = "photos.createFolder";
-                let photos = client(s, C)?;
-                let title = str_param(p, "title").filter(|t| !t.trim().is_empty()).ok_or_else(|| bad(C, "title required"))?;
-                let id = photos.create_folder(title, str_param(p, "parent").filter(|f| !f.is_empty())).map_err(|e| bad(C, e.to_string()))?;
-                Ok(json!({"id": id}))
-            }),
+        "{title, parent?: Photos folder id} → {id}",
+        photos_enabled, |s, p| {
+            const C: &str = "photos.createFolder";
+            let photos = client(s, C)?;
+            let title = str_param(p, "title").filter(|t| !t.trim().is_empty()).ok_or_else(|| bad(C, "title required"))?;
+            let id = photos.create_folder(title, str_param(p, "parent").filter(|f| !f.is_empty())).map_err(|e| bad(C, e.to_string()))?;
+            Ok(json!({"id": id}))
+        }),
         cmd!(query "photos.addToAlbum", "Add to Apple Photos Album", [], None,
-            "{album: Photos album id, ids?: catalog photo ids (default: the selection)} → {added, requested, notLinked} — the helper counts what is really in the album afterwards, because Photos can skip silently",
-            photos_enabled, |s, p| {
-                const C: &str = "photos.addToAlbum";
-                let photos = client(s, C)?;
-                let album = str_param(p, "album").filter(|a| !a.is_empty()).ok_or_else(|| bad(C, "album required"))?;
-                let targets = s.targets(p);
-                let mut ids = Vec::new();
-                let mut not_linked = 0;
-                for t in &targets {
-                    match s.photos_links.id_of(*t) {
-                        Some(id) => ids.push(id.to_string()),
-                        None => not_linked += 1,
-                    }
+        "{album: Photos album id, ids?: catalog photo ids (default: the selection)} → {added, requested, notLinked} — the helper counts what is really in the album afterwards, because Photos can skip silently",
+        photos_enabled, |s, p| {
+            const C: &str = "photos.addToAlbum";
+            let photos = client(s, C)?;
+            let album = str_param(p, "album").filter(|a| !a.is_empty()).ok_or_else(|| bad(C, "album required"))?;
+            let targets = s.targets(p);
+            let mut ids = Vec::new();
+            let mut not_linked = 0;
+            for t in &targets {
+                match s.photos_links.id_of(*t) {
+                    Some(id) => ids.push(id.to_string()),
+                    None => not_linked += 1,
                 }
-                if ids.is_empty() {
-                    return Ok(json!({"added": 0, "requested": 0, "notLinked": not_linked}));
-                }
-                let (added, requested) = photos.add_to_album(album, &ids).map_err(|e| bad(C, e.to_string()))?;
-                Ok(json!({"added": added, "requested": requested, "notLinked": not_linked}))
-            }),
+            }
+            if ids.is_empty() {
+                return Ok(json!({"added": 0, "requested": 0, "notLinked": not_linked}));
+            }
+            let (added, requested) = photos.add_to_album(album, &ids).map_err(|e| bad(C, e.to_string()))?;
+            Ok(json!({"added": added, "requested": requested, "notLinked": not_linked}))
+        }),
     ];
     v.retain(|c| !c.id.is_empty());
     v
@@ -517,7 +512,9 @@ mod tests {
     #[test]
     fn albums_and_assets_pass_through_with_link_marks() {
         let mut s = session_with_fake(|cmd, p| match cmd {
-            "albums" => Ok(json!({"items": [{"id": "A/L0/040", "cloudId": "ca", "title": "Iceland", "kind": "album", "depth": 0, "parent": "", "count": 2}]})),
+            "albums" => {
+                Ok(json!({"items": [{"id": "A/L0/040", "cloudId": "ca", "title": "Iceland", "kind": "album", "depth": 0, "parent": "", "count": 2}]}))
+            }
             "assets" => {
                 assert_eq!(p["album"], "A/L0/040");
                 Ok(json!({"items": [{"id": "X/L0/001", "cloudId": "cx"}, {"id": "Y/L0/001", "cloudId": "cy"}], "total": 2}))

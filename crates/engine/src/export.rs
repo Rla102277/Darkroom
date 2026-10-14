@@ -2385,7 +2385,8 @@ mod tests {
             let (y0, y1) = (on.iter().map(|p| p.1).min().unwrap(), on.iter().map(|p| p.1).max().unwrap());
             (x0, x1, y0, y1, img)
         };
-        let base = Watermark { text: "IA Darkroom".into(), size: 0.08, opacity: 1.0, shadow: false, inset_x: 0.0, inset_y: 0.0, ..Default::default() };
+        let base =
+            Watermark { text: "IA Darkroom".into(), size: 0.08, opacity: 1.0, shadow: false, inset_x: 0.0, inset_y: 0.0, ..Default::default() };
         let (a0, a1, b0, b1, flat) = lit(&base);
         assert!(a1 - a0 > 2 * (b1 - b0), "unturned text is wide");
         for rotation in [90, 270] {

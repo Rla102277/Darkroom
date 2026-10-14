@@ -50,8 +50,16 @@ const PROPHOTO_Y: [f32; 3] = [0.288_040, 0.711_874, 0.000_086];
 /// The raw's camera local tone as a gain table map synthesized from its JPEG, with where the
 /// developed picture sits in the active area. `None` when there is no JPEG to learn from, no camera
 /// tone curve to invert, too few clean samples, or no local work worth keeping.
-pub(crate) fn synthesize(raw: &RawImage, bytes: &[u8], transform: &CameraTransform, look: Option<&CameraLook>, tone: Option<&CameraTone>) -> Option<Arc<LocalTone>> {
-    let tone = tone?;
+pub(crate) fn synthesize(
+    raw: &RawImage,
+    bytes: &[u8],
+    transform: &CameraTransform,
+    look: Option<&CameraLook>,
+    tone: Option<&CameraTone>,
+) -> Option<Arc<LocalTone>> {
+    // no curve from a fitted look or the file's tags (a Leica DNG): learn one from the JPEG
+    let fitted = if tone.is_none() { crate::camera_preview::tone_from_preview(raw, bytes, transform) } else { None };
+    let tone = tone.or(fitted.as_ref())?;
     let map = synthesize_map(raw, bytes, transform, look, tone)?;
     let a = raw.active_area;
     let (aw, ah) = (a.width.max(1) as f64, a.height.max(1) as f64);
@@ -208,7 +216,7 @@ fn fill_cells(log_g: &mut [f32]) {
                 if !empty(&before, t) {
                     continue;
                 }
-                let mut acc = vec![0f32; POINTS_N];
+                let mut acc = [0f32; POINTS_N];
                 let mut n = 0;
                 for (dy, dx) in [(-1i32, 0i32), (1, 0), (0, -1), (0, 1)] {
                     let (ny, nx) = (cy as i32 + dy, cx as i32 + dx);
@@ -314,6 +322,19 @@ impl ToneInverse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_dng_without_a_tone_curve_or_a_jpeg_gets_no_map_and_no_error() {
+        // the JPEG-fitted fallback curve needs a JPEG: none here, so no map (the Q3 path with one is
+        // verified on real files)
+        let bytes = crate::tests_xmp::synthetic_dng_with(None, Default::default());
+        let raw = lightcraft_raw::decode(&bytes).unwrap();
+        let xy = lightcraft_raw::color::as_shot_white_xy(&raw);
+        let t = lightcraft_raw::color::camera_transform(&raw, xy);
+        assert!(raw.color.profile.tone_curve.is_none());
+        assert!(crate::camera_preview::tone_from_preview(&raw, &bytes, &t).is_none());
+        assert!(synthesize(&raw, &bytes, &t, None, None).is_none());
+    }
 
     #[test]
     fn fill_row_interpolates_between_known_points_and_holds_the_ends() {
