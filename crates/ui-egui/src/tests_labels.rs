@@ -81,5 +81,9 @@ fn label_toast_has_pale_colour_and_rating_restores_neutral_style() {
     assert!(red.r() > 180 && red.r() > red.g() && red.r() > red.b(), "pale red toast: {red:?}");
     h.request("ui.key", json!({"key": "5"}), Duration::from_secs(20));
     let rating = pixel(&h.paint(), at);
-    assert!(rating.r() < 80 && rating.r() == rating.g() && rating.g() == rating.b(), "neutral rating toast: {rating:?}");
+    // neutral: dark and untinted (the Darkroom theme's chrome is a near-neutral green-gray, so a
+    // channel or two may differ by a step)
+    let max = rating.r().max(rating.g()).max(rating.b());
+    let min = rating.r().min(rating.g()).min(rating.b());
+    assert!(max < 80 && max - min <= 4, "neutral rating toast: {rating:?}");
 }

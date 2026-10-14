@@ -230,7 +230,7 @@ fn folded_sections_of_an_older_settings_file_stay_folded() {
     assert!(ui.sidebar_section_collapsed("byDate") && ui.sidebar_section_collapsed("keywords") && !ui.sidebar_section_collapsed("albums"));
     let saved = serde_json::to_value(&ui).unwrap();
     assert!(saved.get("collapsedSidebar").is_none(), "{saved}");
-    assert_eq!(saved["sidebar"][2], json!({"id": "byDate", "hidden": false, "collapsed": true}));
+    assert_eq!(saved["sidebar"][3], json!({"id": "byDate", "hidden": false, "collapsed": true}), "byDate is the fourth section (after Apple Photos, Albums, Local)");
 }
 
 /// Given a settings file whose sidebar arrangement is damaged, when it is loaded, then the rest of
