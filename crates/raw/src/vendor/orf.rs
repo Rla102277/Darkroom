@@ -266,7 +266,9 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
             Vec::new()
         };
         (RawData::U16(d), 12)
-    } else if chunks.len() == 1 && info.bits() <= 12 && total * 8 < (n as u64) * 12 {
+    } else if chunks.len() == 1 && (info.bits() <= 12 || info.bits() == 16) && total * 8 < (n as u64) * 12 {
+        // the compressed files state 16 bits per sample (the E-510's do) or 12; either way the strip is too
+        // short to hold the samples unpacked
         let src = chunk_bytes(bytes, &chunks[0]).ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
         let d = if mode == Mode::Full || stated.is_none() { decode_compressed(src, w, h)? } else { Vec::new() };
         (RawData::U16(d), 12)
@@ -355,7 +357,6 @@ pub(crate) fn preview(bytes: &[u8]) -> Option<&[u8]> {
     bytes.get(start..start.checked_add(len)?.min(bytes.len()))
 }
 
-
 /// An MSB-first bit reader over the strip; reads past the end return zero bits (a short file gives a
 /// flat tail rather than a panic).
 struct Bits<'a> {
@@ -393,6 +394,11 @@ impl<'a> Bits<'a> {
     fn skip(&mut self, n: u32) {
         self.acc <<= n;
         self.have -= n;
+    }
+
+    /// Bytes of the source actually consumed (reads past the end count too).
+    fn consumed(&self) -> usize {
+        self.pos.saturating_sub((self.have / 8) as usize)
     }
 
     #[inline]
@@ -458,6 +464,10 @@ fn decode_compressed(src: &[u8], w: usize, h: usize) -> Result<Vec<u16>> {
             let v = pred + ((diff << 2) | low);
             out[row * w + col] = v.clamp(0, 4095) as u16;
         }
+    }
+    // a strip that ran dry decoded zero bits into a flat tail: that is a truncated file, not a picture
+    if bits.consumed() > src.len().saturating_sub(7) + 8 {
+        return Err(RawError::Corrupt("ORF compressed strip ends before its last row".into()));
     }
     Ok(out)
 }
@@ -820,8 +830,9 @@ mod tests {
         let le: Vec<u8> = be.chunks(4).flat_map(|c| [c[3], c[2], c[1], c[0]]).collect();
         let bytes = orf(w as u32, h as u32, 12, le);
         assert_eq!(crate::decode(&bytes).unwrap().data, RawData::U16(px));
+        // too short for 16-bit words: tried as a compressed strip, which runs dry
         let bytes = orf(w as u32, h as u32, 16, vec![0; 40]);
-        assert!(matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))));
+        assert!(matches!(crate::decode(&bytes), Err(RawError::Corrupt(_))));
     }
 
     /// Pack samples into 16-byte blocks: ten little-endian 12-bit fields, then a zero pad byte.
@@ -972,10 +983,12 @@ mod tests {
         let (w, h) = (24usize, 10usize);
         // a smooth ramp with a few hard steps (large residuals use the escape path)
         let px: Vec<u16> = (0..h)
-            .flat_map(|y| (0..w).map(move |x| {
-                let v = 200 + (x * 37 + y * 11) % 900 + if x == 13 { 3000 } else { 0 } + if y == 6 { 700 } else { 0 };
-                v.min(4095) as u16
-            }))
+            .flat_map(|y| {
+                (0..w).map(move |x| {
+                    let v = 200 + (x * 37 + y * 11) % 900 + if x == 13 { 3000 } else { 0 } + if y == 6 { 700 } else { 0 };
+                    v.min(4095) as u16
+                })
+            })
             .collect();
         let bytes = encode_compressed(&px, w, h);
         assert_eq!(decode_compressed(&bytes, w, h).unwrap(), px);
@@ -988,6 +1001,16 @@ mod tests {
         let data = encode_compressed(&px, w, h);
         assert!(data.len() * 8 < w * h * 12);
         let bytes = orf(w as u32, h as u32, 12, data);
+        let r = crate::decode(&bytes).unwrap();
+        assert_eq!((r.data, r.bits), (RawData::U16(px), 12));
+    }
+
+    #[test]
+    fn compressed_strip_stated_as_16_bits_decodes() {
+        // the E-510 writes BitsPerSample 16 on its compressed files; that was refused as unsupported
+        let (w, h) = (24usize, 10usize);
+        let px: Vec<u16> = (0..w * h).map(|i| (300 + i % 70) as u16).collect();
+        let bytes = orf(w as u32, h as u32, 16, encode_compressed(&px, w, h));
         let r = crate::decode(&bytes).unwrap();
         assert_eq!((r.data, r.bits), (RawData::U16(px), 12));
     }
