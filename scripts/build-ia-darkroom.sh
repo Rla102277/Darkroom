@@ -37,7 +37,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Helpers"
 cp target/release/lightcraft "$APP/Contents/MacOS/IA Darkroom"
 cp target/release/lightcraft-cli "$APP/Contents/MacOS/lightcraft-cli"
 cp "$HELPER" "$APP/Contents/Helpers/darkroom-helper"
-cp assets/app-icon/lightcraft.icns "$APP/Contents/Resources/IA Darkroom.icns"
+cp assets/app-icon/ia-darkroom.icns "$APP/Contents/Resources/IA Darkroom.icns"
 cp -R looks "$APP/Contents/Resources/looks"
 sed -e "s/@VERSION@/$VERSION/g" -e "s/@SHORT_VERSION@/${VERSION%%-*}/g" -e "s/@BUILD_SHA@/$SHA/g" \
   packaging/macos/Info.plist.in >"$APP/Contents/Info.plist"

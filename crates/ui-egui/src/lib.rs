@@ -976,6 +976,7 @@ impl LightcraftApp {
         i18n::set_language(self.ui.language);
         let t0 = now_ms();
         panels::library_problem::logic(self);
+        apple_photos::tick(self, ctx);
         self.logic_inner(ctx);
         self.perf.logic_ms = now_ms() - t0;
     }

@@ -131,8 +131,8 @@ mod config_tests {
     #[test]
     fn config_unset_override_keeps_platform_defaults() {
         let vars = [("HOME", "/user"), ("APPDATA", "/roaming"), ("XDG_CONFIG_HOME", "/xdg")];
-        assert_eq!(resolve(Platform::Mac, &vars), Some(PathBuf::from("/user/Library/Application Support/IA Darkroom")));
-        assert_eq!(resolve(Platform::Windows, &vars), Some(PathBuf::from("/roaming/IA Darkroom")));
+        assert_eq!(resolve(Platform::Mac, &vars), Some(PathBuf::from("/user/Library/Application Support/Darkroom")));
+        assert_eq!(resolve(Platform::Windows, &vars), Some(PathBuf::from("/roaming/Darkroom")));
         assert_eq!(resolve(Platform::Other, &vars), Some(PathBuf::from("/xdg/lightcraft")));
         assert_eq!(resolve(Platform::Other, &[("HOME", "/user")]), Some(PathBuf::from("/user/.config/lightcraft")));
         for platform in [Platform::Mac, Platform::Windows, Platform::Other] {

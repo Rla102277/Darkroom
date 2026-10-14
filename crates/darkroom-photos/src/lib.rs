@@ -359,6 +359,11 @@ impl Photos {
         Self::items(self.call("albums", json!({}), QUICK)?)
     }
 
+    /// The tree with each album's cloud identifier too (slower: hundreds of lookups).
+    pub fn albums_with_cloud_ids(&self) -> Result<Vec<Album>> {
+        Self::items(self.call("albums", json!({"cloud": true}), QUICK)?)
+    }
+
     /// A page of assets, oldest first; `album` = None for the whole library. Hidden photos are
     /// left out unless `hidden`.
     pub fn assets(&self, album: Option<&str>, offset: usize, limit: usize, hidden: bool) -> Result<AssetPage> {

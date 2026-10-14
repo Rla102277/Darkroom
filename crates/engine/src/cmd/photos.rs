@@ -95,17 +95,21 @@ fn link(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = strs(p, "ids");
     let with_meta = p.get("withKeywords").and_then(Value::as_bool).unwrap_or(true);
     let include_hidden = p.get("hidden").and_then(Value::as_bool).unwrap_or(false);
-    if album.is_none() && ids.is_empty() {
-        return Err(bad(C, "album (a Photos album id) or ids (asset ids) required"));
+    // asset rows already read by the caller (the window reads them on a worker and links in batches)
+    let given: Vec<darkroom_photos::Asset> = p.get("assets").and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default();
+    if album.is_none() && ids.is_empty() && given.is_empty() {
+        return Err(bad(C, "album (a Photos album id), ids (asset ids) or assets (asset rows) required"));
     }
-    // the assets: named, or everything in the album
+    // the assets: given, named, or everything in the album
     let mut assets: Vec<darkroom_photos::Asset> = Vec::new();
     let mut album_title: Option<String> = str_param(p, "albumName").map(str::to_string).filter(|n| !n.is_empty());
-    if ids.is_empty() {
+    if !given.is_empty() {
+        assets = given;
+    } else if ids.is_empty() {
         let album_id = album.as_deref().unwrap_or("");
         if album_title.is_none() {
             album_title = photos
-                .albums()
+                .albums_with_cloud_ids()
                 .map_err(|e| bad(C, e.to_string()))?
                 .into_iter()
                 .find(|a| a.id == album_id || a.cloud_id == album_id)
@@ -161,7 +165,9 @@ fn link(s: &mut Session, p: &Value) -> Result<Value> {
     let undo0 = s.undo.len();
     let report = crate::import::import_with(s, &paths, &opts)?;
     let album_name = album_title.map(|t| format!("Photos: {t}"));
-    let report = super::library::import_batch_done(s, report, None, album_name.as_deref())?;
+    // a catalog album from an earlier batch of the same link, so batches land together
+    let catalog_album = p.get("catalogAlbum").and_then(Value::as_u64).filter(|id| s.catalog.album(lightcraft_catalog::AlbumId(*id)).is_some());
+    let report = super::library::import_batch_done(s, report, catalog_album, album_name.as_deref())?;
     let ids_of = |k: &str| -> Vec<u64> { report[k].as_array().map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default() };
     let mut linked: Vec<u64> = ids_of("imported");
     linked.extend(ids_of("restored"));

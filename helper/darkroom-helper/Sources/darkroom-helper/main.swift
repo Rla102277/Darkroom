@@ -8,7 +8,7 @@
 //
 // Commands (read side, milestone 1):
 //   status                       -> {authorized, status, libraryPath, assets, albums}
-//   albums                       -> {items: [AlbumRow]} the folder and album tree, depth first
+//   albums {cloud?}              -> {items: [AlbumRow]} the folder and album tree, depth first (cloud ids on request)
 //   assets    {album?, limit?, offset?, hidden?}  -> {items: [AssetRow], total}
 //   originals {ids: [..]}        -> {items: [{id, path, cached, error?}]}
 //   thumbs    {ids: [..], size?, dir}  -> {items: [{id, path, error?}]}
@@ -265,7 +265,7 @@ func walk(_ collections: PHFetchResult<PHCollection>, depth: Int, parent: String
     }
 }
 
-func cmdAlbums() {
+func cmdAlbums(_ p: [String: Any]) {
     requireAccess()
     var raw: [[String: Any]] = []
     var ids: [String] = []
@@ -280,7 +280,9 @@ func cmdAlbums() {
             raw.append(["_": c, "depth": 0, "parent": "smart"])
         }
     }
-    let cloud = cloudIds(for: ids)
+    // Cloud identifiers for albums are slow to resolve for hundreds of albums and only matter
+    // when an album is addressed from another Mac: ask with {"cloud": true}.
+    let cloud = (p["cloud"] as? Bool == true) ? cloudIds(for: ids) : [:]
     let rows = raw.map { r -> [String: Any] in
         albumRow(r["_"] as! PHCollection, depth: r["depth"] as! Int, parent: (r["parent"] as! String).isEmpty ? nil : (r["parent"] as! String), cloud: cloud)
     }
@@ -844,7 +846,7 @@ func cmdPrintJobs(_ p: [String: Any]) {
 let (command, params) = readArgs()
 switch command {
 case "status": cmdStatus()
-case "albums": cmdAlbums()
+case "albums": cmdAlbums(params)
 case "assets": cmdAssets(params)
 case "originals": cmdOriginals(params)
 case "thumbs": cmdThumbs(params)
