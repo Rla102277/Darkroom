@@ -224,6 +224,17 @@ pub fn tiff(img: &Image16, profile: Option<&[u8]>, ppi: u32) -> Result<Vec<u8>> 
     encode_tiff(&e, TiffCompression::Deflate, &meta).map_err(|e| Error::Encode(e.to_string()))
 }
 
+/// The 16-bit TIFF handed to the driver for a color job: `img` already in the paper profile's
+/// device RGB, but tagged sRGB. macOS's print filter (`cgpdftoraster`) runs in vendor matching
+/// mode with an sRGB handoff: it converts whatever the file is tagged with into sRGB before the
+/// Epson driver sees it. Tagged with the paper profile, that undoes the profile (the driver,
+/// color off, then prints sRGB numbers as ink); tagged sRGB, the conversion is the identity and
+/// the device values reach the driver exactly (checked with `cupsfilter` on the P900 queue).
+/// Saved TIFFs keep the real profile tag ([`tiff`]); only the job's copy is tagged this way.
+pub fn handoff_tiff(img: &Image16, ppi: u32) -> Result<Vec<u8>> {
+    tiff(img, None, ppi)
+}
+
 /// The description inside a profile, for naming papers.
 pub fn profile_name(profile: &[u8]) -> Option<String> {
     lightcraft_codecs::icc::parse(profile).and_then(|i| i.description)

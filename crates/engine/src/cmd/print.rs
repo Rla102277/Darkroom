@@ -27,12 +27,14 @@ fn print_enabled(s: &Session) -> std::result::Result<(), String> {
 
 /// Where prepared print files go: `<config dir>/print/`.
 pub fn print_dir() -> std::path::PathBuf {
-    let base = crate::config::config_dir().unwrap_or_else(std::env::temp_dir);
+    // tests never write into the real print folder
+    let base = if cfg!(test) { std::env::temp_dir().join("darkroom-tests") } else { crate::config::config_dir().unwrap_or_else(std::env::temp_dir) };
     base.join("print")
 }
 
 /// Builds the proof target into a TIFF: in `profile` (a path) when given, else sRGB (for
-/// Advanced B&W). Returns the file written.
+/// Advanced B&W). `handoff`: the file goes to the driver, so a profiled one is tagged sRGB
+/// ([`darkroom_print::handoff_tiff`]); otherwise it carries its profile. Returns the file written.
 pub fn make_target(
     dir: &std::path::Path,
     sheet: &str,
@@ -40,6 +42,7 @@ pub fn make_target(
     profile: Option<&str>,
     intent: darkroom_print::Intent,
     name: &str,
+    handoff: bool,
 ) -> Result<(std::path::PathBuf, Option<String>)> {
     const C: &str = "print.target";
     let sheet =
@@ -54,7 +57,8 @@ pub fn make_target(
         }
         None => (img, None, None),
     };
-    let tiff = darkroom_print::tiff(&img, icc.as_deref(), ppi).map_err(|e| bad(C, e.to_string()))?;
+    let tiff = if handoff { darkroom_print::handoff_tiff(&img, ppi) } else { darkroom_print::tiff(&img, icc.as_deref(), ppi) }
+        .map_err(|e| bad(C, e.to_string()))?;
     std::fs::create_dir_all(dir).map_err(|e| bad(C, format!("{}: {e}", dir.display())))?;
     let safe: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
     let path = dir.join(format!("{safe}.tif"));
@@ -247,7 +251,18 @@ fn sheet(s: &mut Session, p: &Value) -> Result<Value> {
         let opts_json = serde_json::to_value(&options).unwrap_or_default();
         let copies = p.get("copies").and_then(Value::as_u64).unwrap_or(1).clamp(1, 99) as u32;
         let job_title = format!("Darkroom: {title} on {}", paper.name);
-        let r = h.print_submit(queue, &out, &job_title, copies, &opts_json).map_err(|e| bad(C, e.to_string()))?;
+        // color: the driver gets a copy tagged sRGB (`handoff_tiff`), the saved file keeps its profile
+        let job_file = if abw.is_none() {
+            let dir = print_dir();
+            std::fs::create_dir_all(&dir).map_err(|e| bad(C, format!("{}: {e}", dir.display())))?;
+            let f = dir.join(format!("{} {} handoff.tif", safe.trim(), paper.id));
+            let bytes = darkroom_print::handoff_tiff(&page, layout.ppi).map_err(|e| bad(C, e.to_string()))?;
+            std::fs::write(&f, bytes).map_err(|e| bad(C, format!("{}: {e}", f.display())))?;
+            f
+        } else {
+            out.clone()
+        };
+        let r = h.print_submit(queue, &job_file, &job_title, copies, &opts_json).map_err(|e| bad(C, e.to_string()))?;
         result["jobId"] = r["jobId"].clone();
         result["request"] = r["request"].clone();
         result["options"] = opts_json;
@@ -283,7 +298,7 @@ pub fn specs() -> Vec<CommandSpec> {
             let ppi = p.get("ppi").and_then(Value::as_u64).unwrap_or(360).clamp(72, 1440) as u32;
             let profile = str_param(p, "profile").filter(|x| !x.is_empty());
             let name = str_param(p, "name").unwrap_or(if profile.is_some() { "proof-target-color" } else { "proof-target-bw" });
-            let (file, pname) = make_target(&print_dir(), sheet, ppi, profile, intent_param(p)?, name)?;
+            let (file, pname) = make_target(&print_dir(), sheet, ppi, profile, intent_param(p)?, name, false)?;
             Ok(json!({"file": file.to_string_lossy(), "profile": pname}))
         }),
         cmd!(query "print.submit", "Send File to Printer", [], None,
@@ -343,7 +358,7 @@ pub fn specs() -> Vec<CommandSpec> {
             let (w, hgt) = size.inches();
             let sheet = format!("{w}x{hgt}");
             let name = if abw.is_some() { format!("proof-{}-abw", paper.id) } else { format!("proof-{}-color", paper.id) };
-            let (file, pname) = make_target(&print_dir(), &sheet, ppi, profile.as_deref(), intent_param(p)?, &name)?;
+            let (file, pname) = make_target(&print_dir(), &sheet, ppi, profile.as_deref(), intent_param(p)?, &name, true)?;
             let job = darkroom_print::p900::Job { paper: paper.id.to_string(), size, quality, abw: abw.clone(), borderless: false, roll_width_in: None, banner: false };
             let mut options = darkroom_print::p900::options(&job).map_err(|e| bad(C, e))?;
             if let Some(extra) = p.get("options").and_then(Value::as_object) {
@@ -376,12 +391,12 @@ mod tests {
     #[test]
     fn the_target_is_written_and_named_by_mode() {
         let dir = std::env::temp_dir().join(format!("darkroom-print-test-{}", std::process::id()));
-        let (file, pname) = make_target(&dir, "5x7", 72, None, darkroom_print::Intent::Perceptual, "proof-target-bw").unwrap();
+        let (file, pname) = make_target(&dir, "5x7", 72, None, darkroom_print::Intent::Perceptual, "proof-target-bw", false).unwrap();
         assert!(file.ends_with("proof-target-bw.tif"), "{}", file.display());
         assert_eq!(pname, None);
         assert!(std::fs::metadata(&file).unwrap().len() > 1000);
-        assert!(make_target(&dir, "nope", 72, None, darkroom_print::Intent::Perceptual, "x").is_err());
-        assert!(make_target(&dir, "5x7", 72, Some("/nonexistent.icc"), darkroom_print::Intent::Perceptual, "x").is_err());
+        assert!(make_target(&dir, "nope", 72, None, darkroom_print::Intent::Perceptual, "x", false).is_err());
+        assert!(make_target(&dir, "5x7", 72, Some("/nonexistent.icc"), darkroom_print::Intent::Perceptual, "x", false).is_err());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -401,5 +416,40 @@ mod tests {
         assert_eq!(v["jobId"], "P900-7");
         assert_eq!(s.execute("print.queues", &Value::Null).unwrap()["default"], "P900");
         assert!(s.execute("print.submit", &json!({"queue": "P900"})).is_err());
+    }
+
+    fn contains(hay: &[u8], needle: &[u8]) -> bool {
+        hay.windows(needle.len()).any(|w| w == needle)
+    }
+
+    /// macOS's print filter converts the job file from its tag into sRGB before the driver sees it:
+    /// a color proof must reach the driver tagged sRGB (device values untouched), while a saved
+    /// target keeps the paper profile. Before, the job file carried the paper profile, which the
+    /// filter undid.
+    #[test]
+    fn the_color_proof_reaches_the_driver_tagged_srgb() {
+        let paper_icc = lightcraft_codecs::icc::write_named(lightcraft_codecs::space::NamedSpace::AdobeRgb);
+        let srgb = lightcraft_codecs::icc::write_named(lightcraft_codecs::space::NamedSpace::Srgb);
+        let dir = std::env::temp_dir().join(format!("darkroom-handoff-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let icc_path = dir.join("paper.icc");
+        std::fs::write(&icc_path, &paper_icc).unwrap();
+        let submitted = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
+        let seen = submitted.clone();
+        let mut s = Session::new();
+        s.photos = Some(darkroom_photos::Photos::with_runner(darkroom_photos::fake_runner(move |cmd, p| match cmd {
+            "print.submit" => {
+                *seen.lock().unwrap() = p["file"].as_str().unwrap_or_default().to_string();
+                Ok(json!({"jobId": "P900-8", "request": "request id is P900-8 (1 file(s))"}))
+            }
+            _ => Err(darkroom_photos::Error::Helper("unexpected".into())),
+        })));
+        let icc = icc_path.to_string_lossy().to_string();
+        s.execute("print.proof", &json!({"queue": "P900", "paper": "ultrapro-luster", "size": "5x7", "ppi": 72, "profile": icc})).unwrap();
+        let job = std::fs::read(submitted.lock().unwrap().as_str()).unwrap();
+        assert!(contains(&job, &srgb) && !contains(&job, &paper_icc), "the job file is tagged sRGB");
+        let (saved, _) = make_target(&dir, "5x7", 72, Some(&icc), darkroom_print::Intent::Perceptual, "saved", false).unwrap();
+        assert!(contains(&std::fs::read(saved).unwrap(), &paper_icc), "a saved target keeps the paper profile");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
