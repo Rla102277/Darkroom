@@ -255,7 +255,7 @@ fn body(app: &mut LightcraftApp, w: &mut CuratorWindow, ui: &mut Ui, job: &light
     ui.horizontal(|ui| {
         for (tab, label) in [(Tab::Report, "Report"), (Tab::Stacks, "Stacks"), (Tab::Cull, "Cull")] {
             let r = ui.selectable_label(w.tab == tab, label);
-            crate::widgets::register(ui.ctx(), &format!("curator:tab.{label}"), r.rect);
+            crate::widgets::register(ui.ctx(), format!("curator:tab.{label}"), r.rect);
             if r.clicked() && w.tab != tab {
                 w.tab = tab;
                 w.group = None;
