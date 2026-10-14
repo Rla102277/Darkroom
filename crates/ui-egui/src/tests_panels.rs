@@ -250,6 +250,12 @@ fn a_damaged_sidebar_arrangement_does_not_lose_the_settings() {
     }
 }
 
+/// These section ids, less the sections this platform does not have (Local is not on the web,
+/// Apple Photos is only on a Mac).
+fn on_this_platform(ids: &[&str]) -> Vec<String> {
+    ids.iter().filter(|id| crate::sidebar::SidebarSection::from_id(id).is_none_or(|s| s.available())).map(|s| s.to_string()).collect()
+}
+
 /// The sections drawn in the sidebar, top to bottom.
 fn sections_drawn(h: &Headless) -> Vec<String> {
     let mut drawn: Vec<(f32, String)> =
@@ -264,21 +270,24 @@ fn sections_drawn(h: &Headless) -> Vec<String> {
 #[test]
 fn the_sidebar_draws_its_sections_as_arranged() {
     let mut h = demo([1400.0, 1400.0], json!({"view": "photoGrid", "leftPanel": true}));
-    // (Local is not on every platform)
-    let listed = |drawn: &[String]| drawn.iter().filter(|s| s.as_str() != "local").cloned().collect::<Vec<_>>();
     let usual = sections_drawn(&h);
-    assert_eq!(listed(&usual), ["albums", "byDate", "folders", "keywords"], "{usual:?}");
+    assert_eq!(usual, on_this_platform(&["applePhotos", "albums", "local", "byDate", "folders", "keywords"]));
     // the demo library was imported from no folder: Folders says so in place of rows
     assert!(has(&h, "sidebarEmpty:folders") && !has(&h, "sidebarEmpty:keywords"));
     let r = h.request("ui.set", json!({"sidebar": [{"id": "keywords"}, {"id": "byDate", "hidden": true}, {"id": "albums"}]}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     let drawn = sections_drawn(&h);
-    assert_eq!(listed(&drawn), ["keywords", "albums", "folders"], "{drawn:?}");
+    assert_eq!(drawn, on_this_platform(&["keywords", "albums", "applePhotos", "local", "folders"]), "the sections left out follow");
     assert!(!h.app.widgets.iter().any(|(w, _)| w.starts_with("source:date:")), "a hidden section draws no rows");
     // every header sits the same gap below the last row above it
-    let mut rows: Vec<egui::Rect> =
-        h.app.widgets.iter().filter(|(w, _)| w.starts_with("source:") || w.starts_with("sidebarEmpty:")).map(|(_, r)| *r).collect();
+    let mut rows: Vec<egui::Rect> = h
+        .app
+        .widgets
+        .iter()
+        .filter(|(w, _)| w.starts_with("source:") || w.starts_with("sidebarEmpty:") || w.starts_with("applePhotos:"))
+        .map(|(_, r)| *r)
+        .collect();
     rows.sort_by(|a, b| a.top().total_cmp(&b.top()));
     for id in &drawn {
         let header = widget(&h, &format!("sidebarSection:{id}"));
@@ -467,10 +476,8 @@ fn header(h: &Headless, id: &str) -> egui::Rect {
 fn dragging_a_header_moves_its_section() {
     // folders too: photos imported from a folder
     let mut h = folders_app_sized(&["/pics/trip/a.jpg"], [1400.0, 1400.0]);
-    let usual = sections_drawn(&h);
-    let with_local = usual.contains(&"local".to_string());
-    let listed = |ids: &[&str]| ids.iter().filter(|s| with_local || **s != "local").map(|s| s.to_string()).collect::<Vec<_>>();
-    assert_eq!(usual, listed(&["albums", "local", "byDate", "folders", "keywords"]));
+    let listed = on_this_platform;
+    assert_eq!(sections_drawn(&h), listed(&["applePhotos", "albums", "local", "byDate", "folders", "keywords"]));
     assert!(has(&h, "sidebarEmpty:keywords"), "no keywords in this library: the section says so and stays");
     // Folders, dragged to just above Albums
     let (from, to) = (header(&h, "folders").center(), header(&h, "albums").center() - egui::vec2(0.0, 12.0));
@@ -504,12 +511,12 @@ fn dragging_a_header_moves_its_section() {
     h.step();
     assert_eq!(h.app.ui.dragging_section, None);
     assert!(!has(&h, "sidebarSectionDrop"));
-    assert_eq!(sections_drawn(&h), listed(&["folders", "albums", "local", "byDate", "keywords"]));
+    assert_eq!(sections_drawn(&h), listed(&["applePhotos", "folders", "albums", "local", "byDate", "keywords"]));
     // dragged below everything: last
     let end = egui::pos2(header(&h, "keywords").center().x, widget(&h, "panel:left_panel").bottom() - 20.0);
     let from = header(&h, "albums").center();
     drag_between(&mut h, from, end, Vec::new());
-    assert_eq!(sections_drawn(&h), listed(&["folders", "local", "byDate", "keywords", "albums"]));
+    assert_eq!(sections_drawn(&h), listed(&["applePhotos", "folders", "local", "byDate", "keywords", "albums"]));
     // kept with the UI state
     let back = serde_json::from_value::<crate::UiState>(serde_json::to_value(&h.app.ui).unwrap()).unwrap().sanitized();
     assert_eq!(back.sidebar, h.app.ui.sidebar);
@@ -574,8 +581,9 @@ fn dragging_a_section_is_not_dragging_an_album() {
 #[test]
 fn a_section_moves_up_and_down_from_its_menu() {
     let mut h = demo([1400.0, 1400.0], json!({"view": "photoGrid", "leftPanel": true}));
-    // (Local is not on every platform: taken out, so the same sections are there everywhere)
+    // (Local and Apple Photos are not on every platform: taken out, so the same sections are there everywhere)
     exec(&mut h, "view.sidebarSection", json!({"section": "local", "show": false}));
+    exec(&mut h, "view.sidebarSection", json!({"section": "applePhotos", "show": false}));
     exec(&mut h, "view.sidebarSection", json!({"section": "folders", "show": false}));
     assert_eq!(sections_drawn(&h), ["albums", "byDate", "keywords"]);
     right_click(&mut h, "sidebarSection:keywords");

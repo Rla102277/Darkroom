@@ -294,6 +294,11 @@ mod tests {
         layout.sections().iter().map(|s| s.id).collect()
     }
 
+    /// These sections, less the ones this platform does not have (Apple Photos is only on a Mac).
+    fn here(sections: &[SidebarSection]) -> Vec<SidebarSection> {
+        sections.iter().copied().filter(|s| s.available()).collect()
+    }
+
     fn read(saved: serde_json::Value) -> SidebarLayout {
         serde_json::from_value(saved).unwrap()
     }
@@ -354,10 +359,10 @@ mod tests {
         let mut layout = SidebarLayout::default();
         layout.set_collapsed(ByDate, true);
         layout.set_hidden(ByDate, true);
-        assert_eq!(layout.shown().collect::<Vec<_>>(), [Albums, Local, Folders, Keywords]);
+        assert_eq!(layout.shown().collect::<Vec<_>>(), here(&[ApplePhotos, Albums, Local, Folders, Keywords]));
         assert!(!layout.is_default());
         layout.set_hidden(ByDate, false);
-        assert_eq!(layout.shown().collect::<Vec<_>>(), [Albums, Local, ByDate, Folders, Keywords]);
+        assert_eq!(layout.shown().collect::<Vec<_>>(), here(&[ApplePhotos, Albums, Local, ByDate, Folders, Keywords]));
         assert!(layout.is_collapsed(ByDate));
     }
 
@@ -413,6 +418,9 @@ mod tests {
     #[test]
     fn a_section_moves_one_place_among_the_shown_ones() {
         let mut layout = SidebarLayout::default();
+        // (Apple Photos is only on a Mac: taken out, so the same sections are shown everywhere;
+        // it moves like the others at the end)
+        layout.set_hidden(ApplePhotos, true);
         layout.set_hidden(ByDate, true);
         // down past the hidden By Date in one step
         assert!(layout.can_move(Local, false));
@@ -425,6 +433,12 @@ mod tests {
         assert_eq!(layout.shown().collect::<Vec<_>>(), [Folders, Albums, Keywords, Local]);
         assert!(!layout.can_move(Folders, true) && !layout.move_by(Folders, true), "the first can't go up");
         assert!(!layout.can_move(ByDate, true) && !layout.move_by(ByDate, true), "a hidden section doesn't move");
+        layout.set_hidden(ApplePhotos, false);
+        if ApplePhotos.available() {
+            assert!(!layout.can_move(ApplePhotos, true), "shown again at the top");
+            assert!(layout.move_by(ApplePhotos, false));
+            assert_eq!(layout.shown().collect::<Vec<_>>(), [Folders, ApplePhotos, Albums, Keywords, Local]);
+        }
     }
 
     /// Sections an older settings file listed as collapsed are folded; names it got wrong are ignored.
