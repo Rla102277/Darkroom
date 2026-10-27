@@ -1,3 +1,5 @@
+> **Moved, Oct 26 2026.** IA Darkroom now lives in [Rla102277/theinfinitearch](https://github.com/Rla102277/theinfinitearch/tree/main/darkroom) at `darkroom/`, with full history. This repo is frozen: do not commit or push here. Build from the monorepo: `darkroom/scripts/build-ia-darkroom.sh`.
+
 # IA Darkroom: handoff for the next session
 
 Read this first, before CLAUDE.md. CLAUDE.md is LightCraft's upstream agent guide and still applies
